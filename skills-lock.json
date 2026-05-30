@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "skills": {
+    "atomic-design-fundamentals": {
+      "source": "thebushidocollective/han",
+      "sourceType": "github",
+      "skillPath": "plugins/patterns/atomic-design/skills/atomic-design-fundamentals/SKILL.md",
+      "computedHash": "4a2d3a077911fd8da7ac42c42ff120345e476078ede8f523c9a0a7b4e3eb7cc8"
+    },
+    "axios": {
+      "source": "slanycukr/riot-api-project",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/frontend/axios/SKILL.md",
+      "computedHash": "693db7fd47a5178c87fc72f26944e7a8436beb20c5347f67266def9c965118de"
+    },
+    "prisma-database-setup": {
+      "source": "prisma/skills",
+      "sourceType": "github",
+      "skillPath": "prisma-database-setup/SKILL.md",
+      "computedHash": "46d2dc2f9c968722376bbb6a1a1389c82bd7cceb5973ac1486c54890514b8959"
+    }
+  }
+}

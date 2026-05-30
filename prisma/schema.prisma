@@ -1,0 +1,200 @@
+// ============================================================
+// LOCO 21 PRO — Prisma Schema (MySQL)
+// Skill: prisma-database-setup (references/mysql.md)
+// Generated output: src/generated/prisma
+// ============================================================
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+// ─── Enums ───────────────────────────────────────────────────
+
+enum EmployeeStatus {
+  Aktif
+  Menunggu
+}
+
+enum TaskStatus {
+  To_Do        @map("To Do")
+  In_Progress  @map("In Progress")
+  Revisi
+  Done
+  Approved
+}
+
+enum TaskPriority {
+  High
+  Medium
+  Low
+}
+
+enum TaskType {
+  Core
+  Support
+  Colaboration
+  Improvement
+}
+
+enum ProjectStatus {
+  Fix
+  Pitching
+  Pending
+  Cancel
+}
+
+// ─── Models ──────────────────────────────────────────────────
+
+model Division {
+  id          String   @id @default(uuid())
+  name        String   @unique 
+  displayName String   
+  
+  employees      Employee[]
+  taskApprovals  TaskApproval[] 
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("divisions")
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique 
+  displayName String   
+  
+  employees Employee[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("roles")
+}
+
+model Employee {
+  id        String         @id @default(uuid())
+  name      String
+  email     String         @unique
+  password  String         
+  phone     String
+  address   String         @db.Text
+  birthDate String
+  
+  // NORMALISASI: Menghubungkan ke master Divisi
+  divisionId String
+  division   Division      @relation(fields: [divisionId], references: [id], onDelete: Restrict)
+  
+  jobTitle  String
+  
+  // NORMALISASI: Menghubungkan ke master Role
+  roleId    String
+  role      Role           @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  
+  status    EmployeeStatus @default(Menunggu)
+
+  // Relations
+  assignedTasks   Task[]         @relation("Assignee")
+  partnerTasks    Task[]         @relation("Partner")
+  
+  managedProjects Project[]      @relation("ProjectOfficer") 
+  taskApprovals   TaskApproval[] 
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("employees")
+}
+
+model Project {
+  id               String        @id @default(uuid())
+  name             String        @unique
+  client           String
+  startDate        String
+  endDate          String
+  venue            String
+  status           ProjectStatus @default(Pitching)
+  
+  projectOfficerId String?
+  projectOfficer   Employee?     @relation("ProjectOfficer", fields: [projectOfficerId], references: [id], onDelete: SetNull)
+
+  // Relations
+  tasks Task[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("projects")
+}
+
+model Task {
+  id          String       @id @default(uuid())
+  title       String
+  description String       @db.Text
+  status      TaskStatus   @default(To_Do)
+  priority    TaskPriority @default(Medium)
+  taskType    TaskType     @default(Core)
+  date        String
+  fileName    String       @default("")
+
+  // Submission / result
+  resultLink String @default("")
+  resultFile String @default("")
+
+  revisionCount Int            @default(0)
+  
+  revisions     TaskRevision[] 
+  approvals     TaskApproval[] 
+
+  // Completion
+  completedAt String?
+
+  // Relations
+  assigneeId String
+  assignee   Employee  @relation("Assignee", fields: [assigneeId], references: [id], onDelete: Cascade)
+
+  partnerId  String?
+  partnerEmp Employee? @relation("Partner", fields: [partnerId], references: [id], onDelete: SetNull)
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("tasks")
+}
+
+model TaskApproval {
+  id           String    @id @default(uuid())
+  taskId       String
+  task         Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  
+  divisionId   String
+  division     Division  @relation(fields: [divisionId], references: [id], onDelete: Cascade)
+  
+  approvedById String?   
+  approvedBy   Employee? @relation(fields: [approvedById], references: [id], onDelete: SetNull)
+  
+  approvedAt   DateTime  @default(now())
+
+  @@unique([taskId, divisionId]) 
+  @@map("task_approvals")
+}
+
+model TaskRevision {
+  id             String   @id @default(uuid())
+  taskId         String
+  task           Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  
+  revisionNumber Int      
+  notes          String   @db.Text
+  createdAt      DateTime @default(now())
+
+  @@map("task_revisions")
+}

@@ -1,0 +1,186 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
+@import "tailwindcss";
+
+/* ============================================================
+   LOCO 21 PRO — Light-Red Design System
+   Core CSS Variables
+   ============================================================ */
+
+:root {
+  --background: #EFEFEF;
+  --foreground: #0F172A;
+  --card: #FFFFFF;
+  --card-elevated: #F8FAFC;
+  --border: rgba(15, 23, 42, 0.08);
+  --border-red: rgba(210, 0, 26, 0.3);
+  --red-primary: #D2001A;
+  --red-hover: #EF4444;
+  --red-glow: rgba(210, 0, 26, 0.15);
+  --sidebar-width: 256px;
+  --header-height: 64px;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
+/* ─── Base Reset ─────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* ─── Premium Scrollbar ─────────────────────────────────── */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(210, 0, 26, 0.4);
+  border-radius: 2px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(210, 0, 26, 0.7);
+}
+
+/* ─── Glassmorphism Cards ───────────────────────────────── */
+.glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.glass-card-red {
+  background: rgba(210, 0, 26, 0.03);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(210, 0, 26, 0.15);
+}
+
+/* ─── Red Glow Effects ─────────────────────────────────── */
+.glow-red {
+  box-shadow: 0 0 20px rgba(210, 0, 26, 0.3);
+}
+.glow-red-strong {
+  box-shadow: 0 0 40px rgba(210, 0, 26, 0.5), 0 0 80px rgba(210, 0, 26, 0.2);
+}
+.text-glow-red {
+  text-shadow: 0 0 20px rgba(210, 0, 26, 0.6);
+}
+
+/* ─── Gradient Backgrounds ─────────────────────────────── */
+.gradient-red-light {
+  background: linear-gradient(135deg, #F8FAFC 0%, #EFEFEF 100%);
+}
+.gradient-card-red {
+  background: linear-gradient(135deg, rgba(210, 0, 26, 0.04) 0%, rgba(255, 255, 255, 0) 100%);
+}
+
+/* ─── Animated shimmer for loading ─────────────────────── */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.shimmer {
+  background: linear-gradient(90deg, rgba(15,23,42,0.03) 25%, rgba(210,0,26,0.05) 50%, rgba(15,23,42,0.03) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* ─── Red Border Animation ───────────────────────── */
+@keyframes borderPulse {
+  0%, 100% { border-color: rgba(210, 0, 26, 0.3); box-shadow: 0 0 0 rgba(210,0,26,0); }
+  50% { border-color: rgba(210, 0, 26, 0.7); box-shadow: 0 0 12px rgba(210,0,26,0.3); }
+}
+.border-pulse-red {
+  animation: borderPulse 2.5s ease-in-out infinite;
+}
+
+/* ─── Micro-animation: Fade In Up ──────────────────────── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up {
+  animation: fadeInUp 0.3s ease forwards;
+}
+
+/* ─── Sidebar overlay on mobile ─────────────────────────── */
+@media (max-width: 768px) {
+  .sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(4px);
+    z-index: 40;
+  }
+}
+
+/* ─── Status Badge Colors (Light Theme Optimized) ───────── */
+.badge-approved {
+  background: #ECFDF5;
+  color: #059669;
+  border: 1px solid #A7F3D0;
+}
+.badge-done {
+  background: #EFF6FF;
+  color: #1D4ED8;
+  border: 1px solid #BFDBFE;
+}
+.badge-revisi {
+  background: #FFF7ED;
+  color: #C2410C;
+  border: 1px solid #FED7AA;
+}
+.badge-inprogress {
+  background: #F0FDF4;
+  color: #15803D;
+  border: 1px solid #BBF7D0;
+}
+.badge-todo {
+  background: #FEFCE8;
+  color: #B45309;
+  border: 1px solid #FEF08A;
+}
+
+/* ─── Form Input Focus Style ─────────────────────────────── */
+.input-light {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  color: #0F172A;
+  border-radius: 10px;
+  transition: all 250ms ease;
+}
+.input-light:focus {
+  outline: none;
+  border-color: rgba(210, 0, 26, 0.5);
+  box-shadow: 0 0 0 3px rgba(210, 0, 26, 0.1);
+  background: #FFFFFF;
+}
+.input-light::placeholder {
+  color: #94A3B8;
+}
+.input-light option {
+  background: #FFFFFF;
+  color: #0F172A;
+}
