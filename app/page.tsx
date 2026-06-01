@@ -52,6 +52,7 @@ const defaultNewEmployee = (): NewEmployeeForm => ({
   division: 'Operation',
   jobTitle: '',
   role: 'Karyawan',
+  birthDate: '',
 });
 
 const defaultNewProject = (): NewProjectForm => ({
@@ -440,7 +441,6 @@ export default function App() {
       const created = await api.employees.create({
         ...newEmployee,
         address: '',
-        birthDate: '',
         password: 'password123',
       });
       setEmployees((prev) => [...prev, created]);

@@ -348,11 +348,16 @@ export function EmployeeAddModal({ isOpen, employee, error, onClose, onChange, o
               <input required type="tel" value={employee.phone} onChange={(e) => onChange({ phone: e.target.value })} className={inputClass} placeholder="08123..." />
             </FormField>
           </div>
-          <FormField label="Divisi" required>
-            <select required value={employee.division} onChange={(e) => onChange({ division: e.target.value as Division })} className={selectClass}>
-              {(['Operation','Admin & Finance','Marketing','Creative & Program'] as const).map((d) => <option key={d} value={d}>{d}</option>)}
-            </select>
-          </FormField>
+          <div className="grid grid-cols-2 gap-4">
+            <FormField label="Divisi" required>
+              <select required value={employee.division} onChange={(e) => onChange({ division: e.target.value as Division })} className={selectClass}>
+                {(['Operation','Admin & Finance','Marketing','Creative & Program'] as const).map((d) => <option key={d} value={d}>{d}</option>)}
+              </select>
+            </FormField>
+            <FormField label="Tanggal Lahir" required>
+              <input required type="date" value={employee.birthDate || ''} onChange={(e) => onChange({ birthDate: e.target.value })} className={inputClass} />
+            </FormField>
+          </div>
           <div className="grid grid-cols-2 gap-4">
             <FormField label="Jabatan" required>
               <input required type="text" value={employee.jobTitle} onChange={(e) => onChange({ jobTitle: e.target.value })} className={inputClass} placeholder="Staff..." />
@@ -407,11 +412,16 @@ export function EmployeeEditModal({ isOpen, employee, error, onClose, onChange, 
               <input required type="tel" value={employee.phone} onChange={(e) => onChange({ phone: e.target.value })} className={inputClass} />
             </FormField>
           </div>
-          <FormField label="Divisi" required>
-            <select required value={employee.division} onChange={(e) => onChange({ division: e.target.value as Division })} className={selectClass}>
-              {(['Operation','Admin & Finance','Marketing','Creative & Program'] as const).map((d) => <option key={d} value={d}>{d}</option>)}
-            </select>
-          </FormField>
+          <div className="grid grid-cols-2 gap-4">
+            <FormField label="Divisi" required>
+              <select required value={employee.division} onChange={(e) => onChange({ division: e.target.value as Division })} className={selectClass}>
+                {(['Operation','Admin & Finance','Marketing','Creative & Program'] as const).map((d) => <option key={d} value={d}>{d}</option>)}
+              </select>
+            </FormField>
+            <FormField label="Tanggal Lahir" required>
+              <input required type="date" value={employee.birthDate || ''} onChange={(e) => onChange({ birthDate: e.target.value })} className={inputClass} />
+            </FormField>
+          </div>
           <div className="grid grid-cols-2 gap-4">
             <FormField label="Jabatan" required>
               <input required type="text" value={employee.jobTitle} onChange={(e) => onChange({ jobTitle: e.target.value })} className={inputClass} />

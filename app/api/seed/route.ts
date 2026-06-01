@@ -52,26 +52,24 @@ export async function POST() {
     let empSeeded = 0;
     let projSeeded = 0;
 
-    if (empCount === 0) {
-      for (const emp of EMPLOYEES_SEED) {
-        await prisma.employee.upsert({
-          where: { email: emp.email },
-          update: {},
-          create: {
-            name: emp.name,
-            email: emp.email,
-            password: emp.password,
-            phone: emp.phone,
-            address: emp.address,
-            birthDate: emp.birthDate,
-            divisionId: divisionMap[emp.division],
-            jobTitle: emp.jobTitle,
-            roleId: roleMap[emp.role],
-            status: emp.status as any,
-          },
-        });
-        empSeeded++;
-      }
+    for (const emp of EMPLOYEES_SEED) {
+      await prisma.employee.upsert({
+        where: { email: emp.email },
+        update: {},
+        create: {
+          name: emp.name,
+          email: emp.email,
+          password: emp.password,
+          phone: emp.phone,
+          address: emp.address,
+          birthDate: emp.birthDate,
+          divisionId: divisionMap[emp.division],
+          jobTitle: emp.jobTitle,
+          roleId: roleMap[emp.role],
+          status: emp.status as any,
+        },
+      });
+      empSeeded++;
     }
 
     if (projCount === 0) {

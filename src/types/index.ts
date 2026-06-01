@@ -127,6 +127,7 @@ export interface NewEmployeeForm {
   division: Division;
   jobTitle: string;
   role: EmployeeRole;
+  birthDate: string;
 }
 
 export interface NewProjectForm {
