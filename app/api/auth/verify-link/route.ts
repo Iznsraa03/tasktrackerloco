@@ -30,7 +30,7 @@ export async function GET(request: Request) {
     // Jika token lama ada dan masih valid, kembalikan link yang sama
     const now = new Date();
     if (employee.verificationToken && employee.tokenExpires && employee.tokenExpires > now) {
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://loco21event.com';
       const verificationLink = `${appUrl}/verify?token=${employee.verificationToken}`;
       return NextResponse.json({ verificationLink });
     }
@@ -47,7 +47,7 @@ export async function GET(request: Request) {
       },
     });
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://loco21event.com';
     const verificationLink = `${appUrl}/verify?token=${newToken}`;
 
     console.log(`[GET /api/auth/verify-link] Link baru dibuat untuk ${employee.email}: ${verificationLink}`);
