@@ -9,20 +9,6 @@ import prisma from '@/src/lib/prisma';
 
 const EMPLOYEES_SEED = [
   { name: 'Muhammad Ridwan Zain', email: 'm.ridwan@pt-anda.com', phone: '08110000001', address: 'Makassar', birthDate: '1990-01-01', division: 'Operation', jobTitle: 'Direktur Operasional', role: 'Admin', status: 'Aktif', password: 'password123' },
-  { name: 'Nur Rahmi', email: 'nur.rahmi@pt-anda.com', phone: '08110000002', address: 'Makassar', birthDate: '1995-01-13', division: 'Operation', jobTitle: 'HR & Procurement', role: 'Karyawan', status: 'Aktif', password: 'password123' },
-  { name: 'Resky Yani Fadillah', email: 'resky@pt-anda.com', phone: '08110000003', address: 'Makassar', birthDate: '1992-02-02', division: 'Admin_Finance', jobTitle: 'Manager Admin & Finance', role: 'Manager', status: 'Aktif', password: 'password123' },
-  { name: 'Nurfitrianti Setyowanda', email: 'nurfitrianti@pt-anda.com', phone: '08110000004', address: 'Makassar', birthDate: '1995-03-03', division: 'Admin_Finance', jobTitle: 'Staff Admin & Finance', role: 'Karyawan', status: 'Aktif', password: 'password123' },
-  { name: 'Ruski', email: 'ruski@pt-anda.com', phone: '08110000005', address: 'Makassar', birthDate: '1996-03-04', division: 'Admin_Finance', jobTitle: 'Staff Admin & Finance', role: 'Karyawan', status: 'Aktif', password: 'password123' },
-  { name: 'Isti Trisnawati', email: 'isti@pt-anda.com', phone: '08110000006', address: 'Makassar', birthDate: '1991-04-04', division: 'Marketing', jobTitle: 'Manager Marketing', role: 'Manager', status: 'Aktif', password: 'password123' },
-  { name: 'Syafa Nuramadana Ananta', email: 'syafa@pt-anda.com', phone: '08110000007', address: 'Makassar', birthDate: '1996-05-05', division: 'Marketing', jobTitle: 'Manager Marketing', role: 'Manager', status: 'Aktif', password: 'password123' },
-  { name: 'Wahyuningsih Astry', email: 'wahyuningsih@pt-anda.com', phone: '08110000008', address: 'Makassar', birthDate: '1997-06-06', division: 'Marketing', jobTitle: 'Staff Marketing', role: 'Karyawan', status: 'Aktif', password: 'password123' },
-  { name: 'Muh Fajar Dwi Putra', email: 'fajar@pt-anda.com', phone: '08110000009', address: 'Makassar', birthDate: '1998-07-07', division: 'Marketing', jobTitle: 'Staff Marketing', role: 'Karyawan', status: 'Aktif', password: 'password123' },
-  { name: 'Kiswah Anugrah Basis', email: 'kiswah@pt-anda.com', phone: '08110000010', address: 'Makassar', birthDate: '1999-08-08', division: 'Marketing', jobTitle: 'Staff Marketing', role: 'Karyawan', status: 'Aktif', password: 'password123' },
-  { name: 'Rideks', email: 'rideks@pt-anda.com', phone: '08110000011', address: 'Makassar', birthDate: '1990-09-09', division: 'Creative_Program', jobTitle: 'Manager Creative & Program', role: 'Manager', status: 'Aktif', password: 'password123' },
-  { name: 'Ihram Naufal', email: 'ihram@pt-anda.com', phone: '08110000012', address: 'Makassar', birthDate: '1997-10-10', division: 'Creative_Program', jobTitle: 'Staff Creative', role: 'Karyawan', status: 'Aktif', password: 'password123' },
-  { name: 'Muh. Surya Syah Putra', email: 'surya@pt-anda.com', phone: '08110000013', address: 'Makassar', birthDate: '1998-11-11', division: 'Creative_Program', jobTitle: 'Staff Creative', role: 'Karyawan', status: 'Aktif', password: 'password123' },
-  { name: 'Laras Candena', email: 'laras@pt-anda.com', phone: '08110000014', address: 'Makassar', birthDate: '1999-01-14', division: 'Creative_Program', jobTitle: 'Staff Program', role: 'Karyawan', status: 'Aktif', password: 'password123' },
-  { name: 'Aulira Harliza Rahwa', email: 'aulira@pt-anda.com', phone: '08110000015', address: 'Makassar', birthDate: '1999-12-12', division: 'Creative_Program', jobTitle: 'Staff Program', role: 'Karyawan', status: 'Aktif', password: 'password123' },
 ];
 
 const PROJECTS_SEED = [
