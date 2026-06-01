@@ -1,11 +1,13 @@
 // ============================================================
 // LOCO 21 PRO — API: /api/employees
 // GET  → list all employees
-// POST → create a new employee
+// POST → create a new employee + kirim email verifikasi
 // ============================================================
 
 import { NextResponse } from 'next/server';
+import { randomUUID } from 'crypto';
 import prisma from '@/src/lib/prisma';
+import { sendVerificationEmail } from '@/src/lib/email';
 import type { Division, EmployeeRole, EmployeeStatus } from '@/src/types';
 
 export async function GET() {
@@ -60,11 +62,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'Divisi atau Role tidak valid.' }, { status: 400 });
     }
 
+    // Generate token verifikasi yang unik dan masa kedaluwarsanya (24 jam)
+    const verificationToken = randomUUID();
+    const tokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // +24 jam
+
     const emp = await prisma.employee.create({
       data: {
         name: body.name,
         email: body.email,
-        password: body.password ?? 'password123',
+        password: '', // Password kosong — akan diisi karyawan via halaman verifikasi
         phone: body.phone ?? '',
         address: body.address ?? '',
         birthDate: body.birthDate ?? '',
@@ -72,9 +78,27 @@ export async function POST(request: Request) {
         jobTitle: body.jobTitle,
         roleId: roleRec.id,
         status: 'Menunggu',
+        verificationToken,
+        tokenExpires,
       },
       include: { division: true, role: true }
     });
+
+    // Kirim email verifikasi (atau simulasi lokal)
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+    const verificationLink = `${appUrl}/verify?token=${verificationToken}`;
+    
+    try {
+      await sendVerificationEmail({
+        toEmail: emp.email,
+        toName: emp.name,
+        verificationLink,
+      });
+    } catch (emailErr) {
+      console.error('[POST /api/employees] Gagal mengirim email:', emailErr);
+      // Jangan gagalkan request utama jika hanya email yang gagal
+    }
+
     return NextResponse.json({
       id: emp.id,
       name: emp.name,
@@ -87,6 +111,8 @@ export async function POST(request: Request) {
       jobTitle: emp.jobTitle,
       role: emp.role.name as EmployeeRole,
       status: emp.status,
+      // Info tambahan untuk kebutuhan simulasi admin
+      verificationLink,
     }, { status: 201 });
   } catch (err: any) {
     console.error('[POST /api/employees]', err);

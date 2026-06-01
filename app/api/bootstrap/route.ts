@@ -19,8 +19,26 @@ function mapStatus(s: string): TaskStatus {
   return map[s] ?? (s as TaskStatus);
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const userEmail = request.headers.get('x-user-email');
+    let taskWhereClause: any = {};
+
+    if (userEmail) {
+      const user = await prisma.employee.findUnique({
+        where: { email: userEmail },
+        include: { role: true },
+      });
+      if (user && user.role.name !== 'Admin') {
+        taskWhereClause = {
+          OR: [
+            { assignee: { divisionId: user.divisionId } },
+            { partnerEmp: { divisionId: user.divisionId } },
+          ],
+        };
+      }
+    }
+
     // Run all three queries in parallel for performance
     const [employeeRows, projectRows, taskRows] = await Promise.all([
       prisma.employee.findMany({ 
@@ -32,6 +50,7 @@ export async function GET() {
         include: { projectOfficer: true }
       }),
       prisma.task.findMany({
+        where: taskWhereClause,
         orderBy: { createdAt: 'desc' },
         include: {
           assignee: { include: { division: true } },

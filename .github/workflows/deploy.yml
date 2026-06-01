@@ -1,0 +1,48 @@
+name: Deploy Node.js Project via PM2
+description: Automated deployment for Node.js application using PM2 and direct SSH
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Production Deployment
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Execute Deployment Commands via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          port: ${{ secrets.VPS_PORT }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            # Masuk ke direktori project Anda (ubah path sesuai VPS Anda)
+            cd /var/www/tasktrackerloco
+            
+            # Tarik perubahan terbaru dari repository
+            git pull origin main
+            
+            # Load environment manager (nvm) jika digunakan di server
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            
+            # Install dependensi
+            npm install
+            
+            # Generate Prisma & Build Next.js
+            npx prisma generate
+            npx prisma db push
+            npm run build
+            
+            # Restart aplikasi menggunakan PM2 (ganti 'loco21' dengan nama app Anda)
+            npx pm2 reload loco21 || npx pm2 start npm --name "loco21" -- run start -- -p 3005
+            
+            # Simpan state PM2
+            pm2 save

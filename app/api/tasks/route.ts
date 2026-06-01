@@ -56,9 +56,28 @@ function serializeTask(t: any): Task {
   };
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const userEmail = request.headers.get('x-user-email');
+    let whereClause: any = {};
+
+    if (userEmail) {
+      const user = await prisma.employee.findUnique({
+        where: { email: userEmail },
+        include: { role: true },
+      });
+      if (user && user.role.name !== 'Admin') {
+        whereClause = {
+          OR: [
+            { assignee: { divisionId: user.divisionId } },
+            { partnerEmp: { divisionId: user.divisionId } },
+          ],
+        };
+      }
+    }
+
     const rows = await prisma.task.findMany({
+      where: whereClause,
       orderBy: { createdAt: 'desc' },
       include: {
         assignee: { include: { division: true } },
@@ -77,6 +96,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const userEmail = request.headers.get('x-user-email');
     const body = await request.json();
 
     // Resolve assignee by name
@@ -85,6 +105,19 @@ export async function POST(request: Request) {
     });
     if (!assigneeEmp) {
       return NextResponse.json({ message: `Karyawan "${body.assignee}" tidak ditemukan.` }, { status: 422 });
+    }
+
+    // Validasi otorisasi pembuatan tugas untuk non-Admin
+    if (userEmail) {
+      const user = await prisma.employee.findUnique({
+        where: { email: userEmail },
+        include: { role: true },
+      });
+      if (user && user.role.name !== 'Admin') {
+        if (assigneeEmp.divisionId !== user.divisionId) {
+          return NextResponse.json({ message: 'Anda hanya diizinkan membuat tugas untuk divisi Anda sendiri.' }, { status: 403 });
+        }
+      }
     }
 
     // Resolve project by name

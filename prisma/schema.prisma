@@ -98,6 +98,10 @@ model Employee {
   
   status    EmployeeStatus @default(Menunggu)
 
+  // Email verification
+  verificationToken String?   @unique
+  tokenExpires      DateTime?
+
   // Relations
   assignedTasks   Task[]         @relation("Assignee")
   partnerTasks    Task[]         @relation("Partner")

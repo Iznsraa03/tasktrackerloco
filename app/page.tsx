@@ -80,8 +80,13 @@ function LoginPage({ onLogin }: { onLogin: (user: Employee) => void }) {
       const employees = await api.employees.getAll();
       const found = employees.find((emp) => emp.email === email && emp.password === password);
       if (found) {
-        api.auth.save(email, true);
-        onLogin(found);
+        // Blokir login jika akun belum diverifikasi
+        if (found.status === 'Menunggu') {
+          setError('Akun Anda belum aktif. Silakan lakukan verifikasi melalui link yang dikirimkan ke email Anda terlebih dahulu.');
+        } else {
+          api.auth.save(email, true);
+          onLogin(found);
+        }
       } else {
         setError('Email atau password tidak sesuai.');
       }
@@ -474,11 +479,29 @@ export default function App() {
   };
 
   const handleSimulateEmail = async (emp: Employee) => {
+    // Mengambil link verifikasi baru dari API dan menyalinnya ke clipboard
+    // (menggantikan fungsi lama yang langsung mengaktifkan karyawan)
     try {
-      const updated = await api.employees.update(emp.id, { status: 'Aktif' });
-      setEmployees((prev) => prev.map((e) => e.id === emp.id ? updated : e));
+      // Coba ambil link dari API — atau buat langsung di sisi klien
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? window.location.origin;
+      // Panggil endpoint untuk resend / ambil link verifikasi aktif
+      const res = await fetch(`/api/auth/verify-link?id=${emp.id}`);
+      if (res.ok) {
+        const { verificationLink } = await res.json();
+        try {
+          await navigator.clipboard.writeText(verificationLink);
+          alert(`✅ Link verifikasi berhasil disalin ke clipboard!\n\n${verificationLink}\n\nBagikan link ini kepada ${emp.name} untuk melakukan aktivasi akun.`);
+        } catch {
+          // Fallback jika clipboard API tidak tersedia
+          alert(`🔗 Link Verifikasi untuk ${emp.name}:\n\n${verificationLink}\n\nSalin link di atas dan bagikan kepada karyawan.`);
+        }
+      } else {
+        const data = await res.json();
+        alert(`⚠️ ${data.message ?? 'Token verifikasi tidak ditemukan atau sudah tidak aktif. Coba tambahkan ulang karyawan.'}`);
+      }
     } catch (err) {
       console.error('[handleSimulateEmail]', err);
+      alert('Gagal mengambil link verifikasi. Periksa koneksi server.');
     }
   };
 

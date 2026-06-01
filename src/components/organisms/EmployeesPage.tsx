@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { Plus, Eye, Pencil, Trash2, Send, UserCircle } from 'lucide-react';
+import { Plus, Eye, Pencil, Trash2, Link2, UserCircle } from 'lucide-react';
 import Button from '../atoms/Button';
 import type { Employee } from '@/src/types';
 
@@ -71,8 +71,9 @@ export default function EmployeesPage({
                     <div className="flex justify-end gap-1.5 items-center">
                       {emp.status === 'Menunggu' && (
                         <button onClick={() => onSimulateEmail(emp)}
-                          className="flex items-center gap-1 text-[10px] font-bold text-[#D2001A] bg-[#D2001A]/10 border border-[#D2001A]/20 px-2 py-1 rounded-lg hover:bg-[#D2001A]/20 transition-colors">
-                          <Send size={10} /> Simulasi
+                          title="Salin link verifikasi untuk dibagikan ke karyawan"
+                          className="flex items-center gap-1 text-[10px] font-bold text-blue-600 bg-blue-50 border border-blue-200 px-2 py-1 rounded-lg hover:bg-blue-100 transition-colors">
+                          <Link2 size={10} /> Salin Link
                         </button>
                       )}
                       <button onClick={() => onView(emp)} title="Lihat Detail" className="p-1.5 rounded-lg text-slate-600 hover:text-[#D2001A] hover:bg-[#D2001A]/10 transition-colors"><Eye size={15} /></button>

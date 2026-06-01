@@ -5,7 +5,7 @@
  * @level Organism
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Filter } from 'lucide-react';
 import type { Task, Project, Employee } from '@/src/types';
 
@@ -30,17 +30,30 @@ function getProjectHue(id: string): string {
 }
 
 export default function CalendarPage({ mode, tasks, projects, employees, currentUser, onViewTask, onViewProject }: CalendarPageProps) {
-  const [calDate, setCalDate] = useState(new Date('2026-05-11'));
+  const [currentYear, setCurrentYear] = useState(2026);
+  const [currentMonth, setCurrentMonth] = useState(4); // Default to May
+  const [todayStr, setTodayStr] = useState('2026-05-11');
   const [filterEmp, setFilterEmp] = useState('all');
+
+  useEffect(() => {
+    const today = new Date();
+    setCurrentYear(today.getFullYear());
+    setCurrentMonth(today.getMonth());
+    
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    setTodayStr(`${yyyy}-${mm}-${dd}`);
+  }, []);
 
   const isAdmin = currentUser.role === 'Admin';
   const isManager = currentUser.role === 'Manager';
   const filterEmployees = employees.filter((e) => e.status === 'Aktif' && (isAdmin ? true : e.division === currentUser.division)).map((e) => e.name).sort();
 
-  const daysInMonth = new Date(calDate.getFullYear(), calDate.getMonth() + 1, 0).getDate();
-  const firstDay = new Date(calDate.getFullYear(), calDate.getMonth(), 1).getDay();
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const firstDay = new Date(currentYear, currentMonth, 1).getDay();
   const startOffset = firstDay === 0 ? 6 : firstDay - 1;
-  const curMonthStr = `${calDate.getFullYear()}-${String(calDate.getMonth() + 1).padStart(2, '0')}`;
+  const curMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
 
   // Build grid days
   const gridDays: (null | { day: number; dateStr: string })[] = [];
@@ -52,8 +65,6 @@ export default function CalendarPage({ mode, tasks, projects, employees, current
 
   const weeks: typeof gridDays[] = [];
   for (let i = 0; i < gridDays.length; i += 7) weeks.push(gridDays.slice(i, i + 7));
-
-  const TODAY = '2026-05-11';
 
   return (
     <div className="animate-fade-in-up">
@@ -78,13 +89,19 @@ export default function CalendarPage({ mode, tasks, projects, employees, current
             </div>
           )}
           <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-xl border border-slate-200/60 shadow-sm">
-            <button onClick={() => setCalDate(new Date(calDate.getFullYear(), calDate.getMonth() - 1, 1))} className="p-1 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition-colors">
+            <button onClick={() => {
+              if (currentMonth === 0) { setCurrentMonth(11); setCurrentYear(y => y - 1); }
+              else { setCurrentMonth(m => m - 1); }
+            }} className="p-1 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition-colors">
               <ChevronLeft size={18} />
             </button>
             <span className="font-bold text-slate-800 w-36 text-center text-sm">
-              {MONTH_NAMES[calDate.getMonth()]} {calDate.getFullYear()}
+              {MONTH_NAMES[currentMonth]} {currentYear}
             </span>
-            <button onClick={() => setCalDate(new Date(calDate.getFullYear(), calDate.getMonth() + 1, 1))} className="p-1 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition-colors">
+            <button onClick={() => {
+              if (currentMonth === 11) { setCurrentMonth(0); setCurrentYear(y => y + 1); }
+              else { setCurrentMonth(m => m + 1); }
+            }} className="p-1 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition-colors">
               <ChevronRight size={18} />
             </button>
           </div>
@@ -125,7 +142,7 @@ export default function CalendarPage({ mode, tasks, projects, employees, current
                 {week.map((dayObj, dIdx) => {
                   if (!dayObj) return <div key={`e-${wIdx}-${dIdx}`} className="border-r border-slate-100 bg-slate-50/50 p-2" />;
 
-                  const isToday = dayObj.dateStr === TODAY;
+                  const isToday = dayObj.dateStr === todayStr;
                   let dayTasks: Task[] = [];
                   if (mode === 'task') {
                     dayTasks = tasks.filter((t) => {

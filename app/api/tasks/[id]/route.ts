@@ -68,7 +68,19 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
+    const userEmail = request.headers.get('x-user-email');
     const body = await request.json();
+
+    // Validasi otorisasi lintas-divisi untuk non-Admin
+    if (userEmail) {
+      const user = await prisma.employee.findUnique({ where: { email: userEmail }, include: { role: true } });
+      if (user && user.role.name !== 'Admin') {
+        const existingTask = await prisma.task.findUnique({ where: { id }, include: { assignee: true, partnerEmp: true } });
+        if (!existingTask || (existingTask.assignee.divisionId !== user.divisionId && existingTask.partnerEmp?.divisionId !== user.divisionId)) {
+          return NextResponse.json({ message: 'Akses ditolak: Anda hanya dapat mengubah tugas di divisi Anda.' }, { status: 403 });
+        }
+      }
+    }
 
     // Build dynamic update payload — only scalar fields
     const data: Record<string, any> = {};
@@ -138,11 +150,24 @@ export async function PUT(
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
+    const userEmail = request.headers.get('x-user-email');
+
+    // Validasi otorisasi lintas-divisi untuk non-Admin
+    if (userEmail) {
+      const user = await prisma.employee.findUnique({ where: { email: userEmail }, include: { role: true } });
+      if (user && user.role.name !== 'Admin') {
+        const existingTask = await prisma.task.findUnique({ where: { id }, include: { assignee: true, partnerEmp: true } });
+        if (!existingTask || (existingTask.assignee.divisionId !== user.divisionId && existingTask.partnerEmp?.divisionId !== user.divisionId)) {
+          return NextResponse.json({ message: 'Akses ditolak: Anda hanya dapat menghapus tugas di divisi Anda.' }, { status: 403 });
+        }
+      }
+    }
+
     await prisma.task.delete({ where: { id } });
     return NextResponse.json({ message: 'Tugas berhasil dihapus.' });
   } catch (err: any) {

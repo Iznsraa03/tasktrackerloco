@@ -18,12 +18,22 @@ export const axiosInstance = axios.create({
 });
 
 // ─── Request Interceptor ──────────────────────────────────────
-// Menyisipkan session token ke header Authorization secara otomatis
-// (Uncomment setelah NextAuth selesai dikonfigurasi)
+// Menyisipkan identitas user (email) ke header untuk keperluan authorisasi backend
 axiosInstance.interceptors.request.use(
   (config) => {
-    // const token = ...getSession...
-    // if (token) config.headers.Authorization = `Bearer ${token}`;
+    if (typeof window !== 'undefined') {
+      try {
+        const rawEmail = localStorage.getItem('loco21_auth_v1_email');
+        if (rawEmail) {
+          const email = JSON.parse(rawEmail);
+          if (email) {
+            config.headers['x-user-email'] = email;
+          }
+        }
+      } catch (err) {
+        console.error('[Axios] Error parsing email dari localStorage', err);
+      }
+    }
     return config;
   },
   (error) => Promise.reject(error),
