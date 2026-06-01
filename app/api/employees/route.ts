@@ -12,7 +12,7 @@ import type { Division, EmployeeRole, EmployeeStatus } from '@/src/types';
 
 export async function GET() {
   try {
-    const rows = await prisma.employee.findMany({ 
+    const rows = await prisma.employee.findMany({
       orderBy: { name: 'asc' },
       include: { division: true, role: true }
     });
@@ -39,10 +39,10 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    
+
     // Find Division and Role IDs
     const divRec = await prisma.division.findFirst({
-      where: { 
+      where: {
         OR: [
           { name: body.division },
           { displayName: body.division }
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
       }
     });
     const roleRec = await prisma.role.findFirst({
-      where: { 
+      where: {
         OR: [
           { name: body.role ?? 'Karyawan' },
           { displayName: body.role ?? 'Karyawan' }
@@ -85,9 +85,9 @@ export async function POST(request: Request) {
     });
 
     // Kirim email verifikasi (atau simulasi lokal)
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://loco21event.com';
     const verificationLink = `${appUrl}/verify?token=${verificationToken}`;
-    
+
     try {
       await sendVerificationEmail({
         toEmail: emp.email,
