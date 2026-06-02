@@ -18,7 +18,7 @@ import KPIPage from '@/src/components/organisms/KPIPage';
 import CalendarPage from '@/src/components/organisms/CalendarPage';
 import EmployeesPage from '@/src/components/organisms/EmployeesPage';
 import {
-  TaskModal, ResultModal, RevisionModal, ProjectModal,
+  TaskModal, ResultModal, RevisionModal, ProjectModal, ProjectDeleteModal,
   EmployeeAddModal, EmployeeEditModal, EmployeeDeleteModal, EmployeeViewModal,
 } from '@/src/components/organisms/AppModals';
 import { api } from '@/src/lib/api';
@@ -200,6 +200,7 @@ export default function App() {
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [editProject, setEditProject] = useState<Project | null>(null);
   const [newProject, setNewProject] = useState<NewProjectForm>(defaultNewProject());
+  const [deleteProject, setDeleteProject] = useState<Project | null>(null);
 
   // Employee modals
   const [isAddEmpModalOpen, setIsAddEmpModalOpen] = useState(false);
@@ -210,7 +211,18 @@ export default function App() {
   const [deleteEmployee, setDeleteEmployee] = useState<Employee | null>(null);
   const [viewEmployee, setViewEmployee] = useState<Employee | null>(null);
 
-  // ─── Bootstrap — load all data from MySQL in one request ────
+  // ─── Bootstrap & Auto-Refresh ─────────────────────────────────
+  const refreshData = useCallback(async () => {
+    try {
+      const { employees: emps, projects: projs, tasks: tsks } = await api.bootstrap();
+      setEmployees(emps);
+      setProjects(projs);
+      setTasks(tsks);
+    } catch (err) {
+      console.error('[refreshData]', err);
+    }
+  }, []);
+
   useEffect(() => {
     const savedEmail = api.auth.getEmail();
     const savedLoggedIn = api.auth.getLoggedIn();
@@ -227,7 +239,15 @@ export default function App() {
       })
       .catch((err) => console.error('[Bootstrap]', err))
       .finally(() => setAppLoading(false));
-  }, []);
+
+    const handleFocus = () => refreshData();
+    window.addEventListener('focus', handleFocus);
+    const intervalId = setInterval(refreshData, 30000); // 30s auto-refresh
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      clearInterval(intervalId);
+    };
+  }, [refreshData]);
 
   // ─── Navigation ──────────────────────────────────────────────
   const navigateTo = useCallback((page: Page) => {
@@ -434,6 +454,18 @@ export default function App() {
     }
   };
 
+  const handleDeleteProject = async () => {
+    if (!deleteProject) return;
+    try {
+      await api.projects.remove(deleteProject.id);
+      setProjects((prev) => prev.filter((p) => p.id !== deleteProject.id));
+      setDeleteProject(null);
+    } catch (err: any) {
+      console.error('[handleDeleteProject]', err);
+      alert(err?.response?.data?.message ?? 'Gagal menghapus proyek.');
+    }
+  };
+
   // ─── Employee Handlers ─────────────────────────────────────────
   const handleAddEmployee = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -605,6 +637,7 @@ export default function App() {
             currentUser={currentUser}
             onAddProject={() => setIsProjectModalOpen(true)}
             onEditProject={(p) => setEditProject(p)}
+            onDeleteProject={(p) => setDeleteProject(p)}
             onViewProject={(p) => { setSelectedProject(p); navigateTo('projectDetail'); }}
           />
         );
@@ -767,6 +800,13 @@ export default function App() {
           onSubmit={handleUpdateProject}
         />
       )}
+
+      <ProjectDeleteModal
+        isOpen={!!deleteProject}
+        project={deleteProject}
+        onClose={() => setDeleteProject(null)}
+        onConfirm={handleDeleteProject}
+      />
 
       <EmployeeAddModal
         isOpen={isAddEmpModalOpen}

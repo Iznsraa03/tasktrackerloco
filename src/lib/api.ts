@@ -51,6 +51,10 @@ async function updateProject(id: string, data: Partial<Project>): Promise<Projec
   return res.data;
 }
 
+async function deleteProject(id: string): Promise<void> {
+  await axiosInstance.delete(`/projects/${id}`);
+}
+
 // ─── Tasks ───────────────────────────────────────────────────
 
 async function getTasks(): Promise<Task[]> {
@@ -120,6 +124,7 @@ export const api = {
     getAll: getProjects,
     create: createProject,
     update: updateProject,
+    remove: deleteProject,
   },
 
   tasks: {

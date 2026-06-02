@@ -7,7 +7,7 @@
  */
 
 import React from 'react';
-import { X, CheckCircle2, MessageSquareWarning, AlertTriangle, UploadCloud, UserCircle, Sparkles, Loader2 } from 'lucide-react';
+import { X, CheckCircle2, MessageSquareWarning, AlertTriangle, UploadCloud, UserCircle, Sparkles, Loader2, Trash2 } from 'lucide-react';
 import Button from '../atoms/Button';
 import FormField from '../molecules/FormField';
 import type {
@@ -316,7 +316,36 @@ export function ProjectModal({ isOpen, mode, project, employees, onClose, onChan
   );
 }
 
-// ─── 5. Employee Add Modal ─────────────────────────────────────
+// ─── 5. Project Delete Modal ───────────────────────────────────
+interface ProjectDeleteModalProps {
+  isOpen: boolean;
+  project: Project | null;
+  onClose: () => void;
+  onConfirm: () => void;
+}
+
+export function ProjectDeleteModal({ isOpen, project, onClose, onConfirm }: ProjectDeleteModalProps) {
+  if (!isOpen || !project) return null;
+  return (
+    <ModalShell onClose={onClose}>
+      <div className="max-w-md mx-auto bg-white rounded-2xl border border-slate-200/60 shadow-2xl p-6 text-center">
+        <div className="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Trash2 size={24} />
+        </div>
+        <h3 className="text-lg font-black text-slate-900 mb-2">Hapus Project?</h3>
+        <p className="text-slate-500 text-sm mb-6">
+          Apakah Anda yakin ingin menghapus project <strong className="text-slate-800">{project.name}</strong>? Tindakan ini tidak dapat dibatalkan.
+        </p>
+        <div className="flex justify-center gap-3">
+          <Button type="button" variant="secondary" onClick={onClose}>Batal</Button>
+          <Button type="button" variant="danger" onClick={onConfirm}>Ya, Hapus</Button>
+        </div>
+      </div>
+    </ModalShell>
+  );
+}
+
+// ─── 6. Employee Add Modal ─────────────────────────────────────
 interface EmployeeAddModalProps {
   isOpen: boolean;
   employee: NewEmployeeForm;

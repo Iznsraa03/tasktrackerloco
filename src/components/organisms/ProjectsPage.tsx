@@ -17,6 +17,7 @@ interface ProjectsPageProps {
   currentUser: Employee;
   onAddProject: () => void;
   onEditProject: (project: Project) => void;
+  onDeleteProject: (project: Project) => void;
   onViewProject: (project: Project) => void;
 }
 
@@ -26,6 +27,7 @@ export default function ProjectsPage({
   currentUser,
   onAddProject,
   onEditProject,
+  onDeleteProject,
   onViewProject,
 }: ProjectsPageProps) {
   const canEdit = currentUser.role === 'Admin' || currentUser.role === 'Manager';
@@ -58,6 +60,7 @@ export default function ProjectsPage({
               totalTasks={projTasks.length}
               onClick={() => onViewProject(proj)}
               onEdit={(e) => { e.stopPropagation(); onEditProject(proj); }}
+              onDelete={(e) => { e.stopPropagation(); onDeleteProject(proj); }}
               canEdit={canEdit}
             />
           );

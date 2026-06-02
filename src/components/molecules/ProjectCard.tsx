@@ -7,7 +7,7 @@
  */
 
 import React from 'react';
-import { FolderOpen, Building2, Pencil } from 'lucide-react';
+import { FolderOpen, Building2, Pencil, Trash2 } from 'lucide-react';
 import Badge from '../atoms/Badge';
 import type { Project, ProjectStatus } from '@/src/types';
 
@@ -18,6 +18,7 @@ interface ProjectCardProps {
   totalTasks: number;
   onClick: () => void;
   onEdit?: (e: React.MouseEvent) => void;
+  onDelete?: (e: React.MouseEvent) => void;
   canEdit?: boolean;
 }
 
@@ -28,6 +29,7 @@ export default function ProjectCard({
   totalTasks,
   onClick,
   onEdit,
+  onDelete,
   canEdit = false,
 }: ProjectCardProps) {
   return (
@@ -46,14 +48,27 @@ export default function ProjectCard({
         </div>
         <div className="flex items-center gap-2">
           <Badge variant={project.status as ProjectStatus}>{project.status}</Badge>
-          {canEdit && onEdit && (
-            <button
-              onClick={(e) => { e.stopPropagation(); onEdit(e); }}
-              title="Edit Project"
-              className="p-1.5 rounded-lg text-slate-500 hover:text-[#D2001A] hover:bg-[#D2001A]/10 transition-colors"
-            >
-              <Pencil size={13} />
-            </button>
+          {canEdit && (
+            <div className="flex items-center gap-0.5">
+              {onEdit && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onEdit(e); }}
+                  title="Edit Project"
+                  className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-600/10 transition-colors"
+                >
+                  <Pencil size={13} />
+                </button>
+              )}
+              {onDelete && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onDelete(e); }}
+                  title="Hapus Project"
+                  className="p-1.5 rounded-lg text-slate-500 hover:text-[#D2001A] hover:bg-[#D2001A]/10 transition-colors"
+                >
+                  <Trash2 size={13} />
+                </button>
+              )}
+            </div>
           )}
         </div>
       </div>

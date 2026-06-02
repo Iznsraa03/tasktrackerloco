@@ -65,8 +65,8 @@ export default function Sidebar({
         {/* Logo */}
         <div className="flex h-16 items-center justify-between border-b border-slate-200/60 px-4 shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#D2001A] flex items-center justify-center font-black text-white text-sm shadow-[0_0_12px_rgba(210,0,26,0.5)]">
-              L
+            <div className="w-8 h-8 rounded-lg bg-[#D2001A] flex items-center justify-center font-black text-white text-sm shadow-[0_0_12px_rgba(210,0,26,0.5)] p-1">
+              <img src="/logo/LOGO%20LOCO%20WHITE.png" alt="Logo" className="w-full h-full object-contain" />
             </div>
             <div>
               <span className="text-sm font-black text-slate-800 tracking-wider">LOCO 21</span>

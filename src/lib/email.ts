@@ -25,6 +25,8 @@ const isSmtpConfigured =
  * Membuat konten HTML email verifikasi premium.
  */
 function buildEmailHtml(name: string, link: string): string {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://loco21event.com';
+  const logoUrl = `${appUrl}/logo/LOGO%20LOCO%20WHITE.png`;
   return `<!DOCTYPE html>
 <html lang="id">
 <head>
@@ -58,7 +60,9 @@ function buildEmailHtml(name: string, link: string): string {
 <body>
   <div class="container">
     <div class="header">
-      <div class="header-logo"><span>L</span></div>
+      <div style="margin-bottom: 16px;">
+        <img src="${logoUrl}" alt="LOCO 21 PRO Logo" style="height: 56px; max-width: 100%; object-fit: contain;" />
+      </div>
       <h1>LOCO 21 PRO</h1>
       <p>Sistem Manajemen Tugas Internal</p>
     </div>
