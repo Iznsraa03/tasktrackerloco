@@ -145,6 +145,7 @@ model Task {
   taskType    TaskType     @default(Core)
   date        String
   fileName    String       @default("")
+  briefFile   String       @default("") // Path file brief yang diupload saat pembuatan tugas
 
   // Submission / result
   resultLink String @default("")

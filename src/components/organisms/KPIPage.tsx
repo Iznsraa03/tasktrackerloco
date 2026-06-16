@@ -51,7 +51,7 @@ export default function KPIPage({ employees, tasks, currentUser }: KPIPageProps)
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-slate-900">Key Performance Indicator</h1>
-          <p className="text-sm text-slate-600 mt-1">Evaluasi performa berdasarkan tugas yang disetujui (Approved).</p>
+          <p className="text-sm text-slate-600 mt-1">Evaluasi performa berdasarkan tugas yang diselesaikan (Done & Approved).</p>
         </div>
         <select
           value={kpiMonth}
@@ -93,7 +93,7 @@ export default function KPIPage({ employees, tasks, currentUser }: KPIPageProps)
                   value={kpi.productivityScore}
                   weight="Bobot 40%"
                   color="bg-[#D2001A]/5 border-[#D2001A]/20 text-[#D2001A]"
-                  detail={`${kpi.taskCompleted} dari ${kpi.totalTask} disetujui`}
+                  detail={`${kpi.taskCompleted} dari ${kpi.totalTask} selesai`}
                 />
                 <KPIBar
                   label="Quality"
@@ -107,21 +107,21 @@ export default function KPIPage({ employees, tasks, currentUser }: KPIPageProps)
                   value={kpi.disciplineScore}
                   weight="Bobot 30%"
                   color="bg-teal-500/10 border-teal-500/20 text-teal-600"
-                  detail={`${kpi.taskOnTime} tepat waktu dari ${kpi.taskCompleted} Appv`}
+                  detail={`${kpi.taskOnTime} tepat waktu dari ${kpi.taskCompleted} selesai`}
                 />
                 <KPIBar
                   label="Teamwork"
                   value={kpi.teamworkScore}
                   weight="Bobot 5%"
                   color="bg-orange-500/10 border-orange-500/20 text-orange-600"
-                  detail={`${kpi.supportTask} dari ${kpi.totalSupportTask} disetujui`}
+                  detail={`${kpi.supportTask} dari ${kpi.totalSupportTask} selesai`}
                 />
                 <KPIBar
                   label="Initiative"
                   value={kpi.initiativeScore}
                   weight="Bobot 5%"
                   color="bg-pink-500/10 border-pink-500/20 text-pink-600"
-                  detail={`${kpi.improvementTask} dari ${kpi.totalImprovementTask} disetujui`}
+                  detail={`${kpi.improvementTask} dari ${kpi.totalImprovementTask} selesai`}
                 />
               </div>
             </div>

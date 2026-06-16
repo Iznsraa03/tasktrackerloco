@@ -57,7 +57,7 @@ export async function GET(request: Request) {
           partnerEmp: { select: { name: true } },
           project: { select: { name: true } },
           approvals: { include: { division: true } },
-          revisions: { orderBy: { createdAt: 'desc' }, take: 1 },
+          revisions: { orderBy: { createdAt: 'desc' } }, // Semua revisi
         },
       }),
     ]);
@@ -97,6 +97,7 @@ export async function GET(request: Request) {
       partner: t.partnerEmp?.name ?? '',
       date: t.date,
       fileName: t.fileName ?? '',
+      briefFile: t.briefFile ?? '',
       revisionCount: t.revisionCount,
       completedAt: t.completedAt ?? null,
       resultLink: t.resultLink ?? '',
@@ -106,6 +107,12 @@ export async function GET(request: Request) {
       assignee: t.assignee?.name ?? '',
       division: t.assignee?.division?.displayName ?? 'Operation',
       project: t.project?.name ?? '',
+      revisions: t.revisions.map((r: any) => ({
+        id: r.id,
+        revisionNumber: r.revisionNumber,
+        notes: r.notes,
+        createdAt: r.createdAt?.toISOString?.() ?? String(r.createdAt),
+      })),
     }));
 
     return NextResponse.json({ employees, projects, tasks });

@@ -4,6 +4,10 @@
  *
  * @level Organism
  * Handles: Task, Result, Revision, Project, Employee (Add/Edit/View/Delete)
+ *
+ * Revisi:
+ * - TaskModal: Tambah upload file brief, Admin bisa pilih semua divisi
+ * - ResultModal: Upload file riil via /api/upload
  */
 
 import React from 'react';
@@ -30,7 +34,7 @@ function ModalShell({ children, onClose }: { children: React.ReactNode; onClose:
 const inputClass = 'input-light border border-slate-200 w-full py-2.5 px-4 text-sm';
 const selectClass = 'input-light border border-slate-200 w-full py-2.5 px-3 text-sm';
 
-// ─── 1. Task Modal ─────────────────────────────────────────────
+// ─── 1. Task Modal ──────────────────────────────────────────────
 interface TaskModalProps {
   isOpen: boolean;
   task: NewTaskForm;
@@ -42,12 +46,35 @@ interface TaskModalProps {
   onChange: (updates: Partial<NewTaskForm>) => void;
   onSubmit: (e: React.FormEvent) => void;
   onGenerateAI: () => void;
+  onBriefFileChange?: (filePath: string) => void;
 }
 
-export function TaskModal({ isOpen, task, employees, projects, currentUser, isGeneratingAI, onClose, onChange, onSubmit, onGenerateAI }: TaskModalProps) {
+export function TaskModal({ isOpen, task, employees, projects, currentUser, isGeneratingAI, onClose, onChange, onSubmit, onGenerateAI, onBriefFileChange }: TaskModalProps) {
   if (!isOpen) return null;
   const isAdmin = currentUser.role === 'Admin';
   const isKaryawan = currentUser.role === 'Karyawan';
+  const [briefUploading, setBriefUploading] = React.useState(false);
+  const [briefError, setBriefError] = React.useState('');
+
+  const handleBriefUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setBriefUploading(true);
+    setBriefError('');
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/upload', { method: 'POST', body: formData });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message ?? 'Upload gagal');
+      onChange({ briefFile: data.filePath, fileName: file.name });
+      onBriefFileChange?.(data.filePath);
+    } catch (err: any) {
+      setBriefError(err.message ?? 'Gagal mengunggah file brief.');
+    } finally {
+      setBriefUploading(false);
+    }
+  };
 
   return (
     <ModalShell onClose={onClose}>
@@ -148,13 +175,38 @@ export function TaskModal({ isOpen, task, employees, projects, currentUser, isGe
             />
           </FormField>
 
+          {/* ── File Brief Upload ─────────────────────────── */}
+          <FormField label="Upload File Brief (Opsional)">
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-100 transition-colors">
+                <UploadCloud size={16} className="text-slate-500" />
+                <span className="text-sm text-slate-600">
+                  {briefUploading ? 'Mengunggah...' : task.fileName || 'Klik untuk pilih file brief'}
+                </span>
+                <input
+                  type="file"
+                  className="hidden"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.jpg,.jpeg,.png"
+                  onChange={handleBriefUpload}
+                  disabled={briefUploading}
+                />
+              </label>
+              {briefUploading && <p className="text-xs text-blue-500 animate-pulse">Mengunggah file brief...</p>}
+              {briefError && <p className="text-xs text-red-500">{briefError}</p>}
+              {task.briefFile && !briefUploading && (
+                <p className="text-xs text-emerald-600 font-medium">✓ File brief berhasil diunggah: {task.fileName}</p>
+              )}
+              <p className="text-[10px] text-slate-400">Format: PDF, Word, Excel, PPT, ZIP, JPG, PNG — Maks 10MB</p>
+            </div>
+          </FormField>
+
           <FormField label="Tanggal Deadline" required>
             <input required type="date" value={task.date} onChange={(e) => onChange({ date: e.target.value })} className={inputClass} />
           </FormField>
 
           <div className="flex justify-end gap-3 pt-2 border-t border-slate-100">
             <Button type="button" variant="secondary" onClick={onClose}>Batal</Button>
-            <Button type="submit" variant="primary">Simpan Order</Button>
+            <Button type="submit" variant="primary" disabled={briefUploading}>Simpan Order</Button>
           </div>
         </form>
       </div>
@@ -169,12 +221,34 @@ interface ResultModalProps {
   submission: ResultSubmission;
   onClose: () => void;
   onChange: (updates: Partial<ResultSubmission>) => void;
-  onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onSubmit: (e: React.FormEvent) => void;
 }
 
-export function ResultModal({ isOpen, task, submission, onClose, onChange, onFileChange, onSubmit }: ResultModalProps) {
+export function ResultModal({ isOpen, task, submission, onClose, onChange, onSubmit }: ResultModalProps) {
   if (!isOpen || !task) return null;
+
+  const [uploading, setUploading] = React.useState(false);
+  const [uploadError, setUploadError] = React.useState('');
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setUploadError('');
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/upload', { method: 'POST', body: formData });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message ?? 'Upload gagal');
+      onChange({ value: data.filePath, fileName: file.name });
+    } catch (err: any) {
+      setUploadError(err.message ?? 'Gagal mengunggah file. Coba lagi.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
     <ModalShell onClose={onClose}>
       <div className="max-w-lg mx-auto bg-white rounded-2xl border border-slate-200/60 shadow-2xl overflow-hidden">
@@ -185,31 +259,71 @@ export function ResultModal({ isOpen, task, submission, onClose, onChange, onFil
           <button onClick={onClose} className="p-2 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600"><X size={16} /></button>
         </div>
         <form onSubmit={onSubmit} className="p-6 space-y-4">
+          {/* Konteks Tugas */}
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
+            <p className="text-[10px] text-slate-500 font-bold uppercase mb-0.5">Tugas</p>
+            <p className="text-sm font-semibold text-slate-800">{task.title}</p>
+            <p className="text-xs text-slate-500">{task.project}</p>
+          </div>
+
           <div className="flex gap-4">
             {(['link','file'] as const).map((t) => (
               <label key={t} className="flex items-center gap-2 cursor-pointer">
-                <input type="radio" value={t} checked={submission.type === t} onChange={() => onChange({ type: t, value: '', fileName: '' })} className="accent-[#D2001A]" />
+                <input
+                  type="radio"
+                  value={t}
+                  checked={submission.type === t}
+                  onChange={() => { onChange({ type: t, value: '', fileName: '' }); setUploadError(''); }}
+                  className="accent-[#D2001A]"
+                />
                 <span className="text-sm text-slate-700">{t === 'link' ? 'Link URL' : 'Upload File'}</span>
               </label>
             ))}
           </div>
           {submission.type === 'link' ? (
-            <FormField label="Tautan (URL)" required>
-              <input type="url" required placeholder="https://..." value={submission.value} onChange={(e) => onChange({ value: e.target.value })} className={inputClass} />
+            <FormField label="Tautan URL Hasil Kerja" required>
+              <input
+                type="url"
+                required
+                placeholder="https://drive.google.com/..."
+                value={submission.value}
+                onChange={(e) => onChange({ value: e.target.value })}
+                className={inputClass}
+              />
+              <p className="text-[10px] text-slate-400 mt-1">Contoh: Google Drive, Figma, YouTube, dll.</p>
             </FormField>
           ) : (
-            <FormField label="Pilih File">
-              <label className="flex items-center gap-2 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-100 transition-colors">
-                <UploadCloud size={16} className="text-slate-500" />
-                <span className="text-sm text-slate-600">{submission.fileName || 'Klik untuk Upload'}</span>
-                <input type="file" className="hidden" onChange={onFileChange} />
+            <FormField label="Unggah File Bukti Hasil Kerja">
+              <label className={`flex items-center gap-2 px-4 py-3 bg-slate-50 border ${uploading ? 'border-blue-300 bg-blue-50' : 'border-slate-200'} rounded-xl cursor-pointer hover:bg-slate-100 transition-colors`}>
+                <UploadCloud size={16} className={uploading ? 'text-blue-500' : 'text-slate-500'} />
+                <span className="text-sm text-slate-600">
+                  {uploading ? 'Mengunggah...' : submission.fileName || 'Klik untuk pilih file'}
+                </span>
+                <input
+                  type="file"
+                  className="hidden"
+                  onChange={handleFileChange}
+                  disabled={uploading}
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.jpg,.jpeg,.png,.webp,.gif,.mp4"
+                />
               </label>
-              {submission.fileName && <p className="text-xs text-emerald-600 mt-1">{submission.fileName}</p>}
+              {uploading && <p className="text-xs text-blue-500 mt-1 animate-pulse">Mengunggah file ke server...</p>}
+              {uploadError && <p className="text-xs text-red-500 mt-1">{uploadError}</p>}
+              {submission.fileName && !uploading && (
+                <p className="text-xs text-emerald-600 font-medium mt-1">✓ {submission.fileName} — siap dikirim</p>
+              )}
+              <p className="text-[10px] text-slate-400 mt-1">Format: PDF, Word, Excel, PPT, ZIP, Gambar — Maks 10MB</p>
             </FormField>
           )}
           <div className="flex justify-end gap-3 pt-2 border-t border-slate-100">
             <Button type="button" variant="secondary" onClick={onClose}>Batal</Button>
-            <Button type="submit" variant="success">Kirim & Selesai</Button>
+            <Button
+              type="submit"
+              variant="success"
+              disabled={uploading || (submission.type === 'file' && !submission.value)}
+            >
+              {uploading ? 'Mengunggah...' : 'Kirim & Selesai'}
+            </Button>
           </div>
         </form>
       </div>

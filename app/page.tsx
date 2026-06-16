@@ -38,6 +38,7 @@ const defaultNewTask = (): NewTaskForm => ({
   partner: '',
   date: '',
   fileName: '',
+  briefFile: '',
   revisionCount: 0,
   completedAt: null,
   resultLink: '',
@@ -348,7 +349,8 @@ export default function App() {
         status: 'Done',
         completedAt: today,
         resultLink: resultSubmission.type === 'link' ? resultSubmission.value : '',
-        resultFile: resultSubmission.type === 'file' ? resultSubmission.fileName : '',
+        // Saat upload file, `value` berisi path file dari server (sudah diupload di ResultModal)
+        resultFile: resultSubmission.type === 'file' ? resultSubmission.value : '',
       });
       setTasks((prev) => prev.map((t) => t.id === taskToComplete.id ? updated : t));
       setIsResultModalOpen(false);
@@ -414,6 +416,32 @@ export default function App() {
     } catch (err) {
       console.error('[handleDeleteTask]', err);
     }
+  };
+
+  // ─── Bulk Import CSV Handler ──────────────────────────────────
+  const handleBulkImport = async (rows: any[]): Promise<{ success: number; errors: string[] }> => {
+    let success = 0;
+    const errors: string[] = [];
+    for (const row of rows) {
+      try {
+        const created = await api.tasks.create({
+          ...defaultNewTask(),
+          title: row.title,
+          description: row.description || '',
+          project: row.project,
+          assignee: row.assignee,
+          partner: row.partner || '',
+          priority: row.priority as any,
+          taskType: row.taskType as any,
+          date: row.date,
+        });
+        setTasks((prev) => [created, ...prev]);
+        success++;
+      } catch (err: any) {
+        errors.push(`"${row.title}": ${err?.response?.data?.message ?? err?.message ?? 'Gagal'}`);
+      }
+    }
+    return { success, errors };
   };
 
   const generateAIDescription = async () => {
@@ -598,7 +626,7 @@ export default function App() {
         );
       case 'tasks':
         return (
-          <TasksPage
+        <TasksPage
             tasks={scopedTasks}
             projects={projects}
             employees={employees}
@@ -627,6 +655,8 @@ export default function App() {
             onApprove={handleApproveTask}
             onRevise={(task) => { setTaskToRevise(task); setIsRevisionModalOpen(true); }}
             onDelete={handleDeleteTask}
+            onSubmitResult={(task) => { setTaskToComplete(task); setIsResultModalOpen(true); }}
+            onBulkImport={handleBulkImport}
           />
         );
       case 'projects':
@@ -763,10 +793,6 @@ export default function App() {
         submission={resultSubmission}
         onClose={() => { setIsResultModalOpen(false); setTaskToComplete(null); }}
         onChange={(updates) => setResultSubmission((prev) => ({ ...prev, ...updates }))}
-        onFileChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) setResultSubmission((prev) => ({ ...prev, fileName: file.name, value: '' }));
-        }}
         onSubmit={handleSubmitResult}
       />
 

@@ -31,10 +31,10 @@ export function calculateKPI(
   );
 
   const totalTask = periodTasks.length;
-  const taskCompletedList = periodTasks.filter((t) => t.status === 'Approved');
+  const taskCompletedList = periodTasks.filter((t) => t.status === 'Approved' || t.status === 'Done');
   const taskCompleted = taskCompletedList.length;
   const taskOnTime = taskCompletedList.filter(
-    (t) => t.completedAt && t.completedAt <= t.date
+    (t) => t.status === 'Approved' && t.completedAt && t.completedAt <= t.date
   ).length;
   const totalRevision = periodTasks.reduce(
     (acc, t) => acc + (t.revisionCount || 0),

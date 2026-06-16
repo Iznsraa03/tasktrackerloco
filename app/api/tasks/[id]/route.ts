@@ -1,6 +1,7 @@
 // ============================================================
 // LOCO 21 PRO — API: /api/tasks/[id]
 // PUT    → update task fields (status, result, revision, approve, etc.)
+//          + Validasi RBAC transisi status
 // DELETE → delete task by ID
 // ============================================================
 
@@ -41,6 +42,7 @@ function serializeTask(t: any): Task {
     partner: t.partnerEmp?.name ?? '',
     date: t.date,
     fileName: t.fileName ?? '',
+    briefFile: t.briefFile ?? '',
     revisionCount: t.revisionCount,
     completedAt: t.completedAt ?? null,
     resultLink: t.resultLink ?? '',
@@ -50,6 +52,13 @@ function serializeTask(t: any): Task {
     assignee: t.assignee?.name ?? '',
     division: (t.assignee?.division?.displayName ?? 'Operation') as Division,
     project: t.project?.name ?? '',
+    // Riwayat revisi lengkap untuk TaskDetailModal
+    revisions: t.revisions?.map((r: any) => ({
+      id: r.id,
+      revisionNumber: r.revisionNumber,
+      notes: r.notes,
+      createdAt: r.createdAt?.toISOString?.() ?? String(r.createdAt),
+    })) ?? [],
   };
 }
 
@@ -59,7 +68,7 @@ const TASK_INCLUDE = {
   partnerEmp: { select: { name: true } },
   project: { select: { name: true } },
   approvals: { include: { division: true } },
-  revisions: { orderBy: { createdAt: 'desc' as const }, take: 1 },
+  revisions: { orderBy: { createdAt: 'desc' as const } }, // Semua revisi untuk modal detail
 };
 
 export async function PUT(
@@ -71,28 +80,108 @@ export async function PUT(
     const userEmail = request.headers.get('x-user-email');
     const body = await request.json();
 
-    // Validasi otorisasi lintas-divisi untuk non-Admin
+    // Fetch user untuk validasi RBAC
+    let user: any = null;
+    let userRole: string | null = null;
     if (userEmail) {
-      const user = await prisma.employee.findUnique({ where: { email: userEmail }, include: { role: true } });
-      if (user && user.role.name !== 'Admin') {
-        const existingTask = await prisma.task.findUnique({ where: { id }, include: { assignee: true, partnerEmp: true } });
-        if (!existingTask || (existingTask.assignee.divisionId !== user.divisionId && existingTask.partnerEmp?.divisionId !== user.divisionId)) {
-          return NextResponse.json({ message: 'Akses ditolak: Anda hanya dapat mengubah tugas di divisi Anda.' }, { status: 403 });
-        }
+      user = await prisma.employee.findUnique({ where: { email: userEmail }, include: { role: true } });
+      userRole = user?.role?.name ?? null;
+    }
+
+    // Fetch task yang ada
+    const existingTask = await prisma.task.findUnique({
+      where: { id },
+      include: { assignee: true, partnerEmp: true },
+    });
+
+    if (!existingTask) {
+      return NextResponse.json({ message: 'Tugas tidak ditemukan.' }, { status: 404 });
+    }
+
+    // Validasi otorisasi lintas-divisi untuk non-Admin
+    if (user && userRole !== 'Admin') {
+      if (
+        existingTask.assignee.divisionId !== user.divisionId &&
+        existingTask.partnerEmp?.divisionId !== user.divisionId
+      ) {
+        return NextResponse.json(
+          { message: 'Akses ditolak: Anda hanya dapat mengubah tugas di divisi Anda.' },
+          { status: 403 }
+        );
       }
     }
 
+    // ── VALIDASI RBAC TRANSISI STATUS ───────────────────────
+    if (body.status !== undefined && user && userRole) {
+      const fromStatus = mapStatus(existingTask.status);
+      const toStatus = body.status as string;
+
+      // Tidak ada perubahan status, skip validasi
+      if (fromStatus !== toStatus) {
+        if (userRole === 'Karyawan') {
+          // Karyawan hanya boleh mengubah tugas yang ditugaskan kepadanya
+          const isOwner =
+            existingTask.assigneeId === user.id ||
+            existingTask.partnerId === user.id;
+
+          if (!isOwner) {
+            return NextResponse.json(
+              { message: 'Akses ditolak: Anda bukan pelaksana atau partner tugas ini.' },
+              { status: 403 }
+            );
+          }
+
+          // Aturan transisi yang diizinkan untuk Karyawan
+          const allowedTransitions: Record<string, string[]> = {
+            'To Do': ['In Progress'],
+            'In Progress': ['Done'],
+            'Revisi': ['In Progress', 'Done'],
+          };
+          const allowed = allowedTransitions[fromStatus] ?? [];
+          if (!allowed.includes(toStatus)) {
+            return NextResponse.json(
+              { message: `Anda tidak dapat mengubah status dari "${fromStatus}" ke "${toStatus}". Perubahan status ini memerlukan peran Manager atau Admin.` },
+              { status: 403 }
+            );
+          }
+
+          // Karyawan wajib menyertakan bukti hasil saat mengubah ke Done
+          if (toStatus === 'Done' && !body.resultLink && !body.resultFile) {
+            return NextResponse.json(
+              { message: 'Wajib menyertakan tautan URL atau file bukti hasil kerja saat menandai tugas sebagai selesai.' },
+              { status: 422 }
+            );
+          }
+        }
+
+        if (userRole === 'Manager' || userRole === 'Admin') {
+          // Manager/Admin HANYA boleh approve atau revisi dari status Done (DIBATALKAN - Bebas ganti status)
+          // Manager/Admin tidak boleh memindahkan tugas ke To Do atau In Progress (DIBATALKAN - Bebas ganti status)
+          
+          // Revisi wajib disertai catatan revisi
+          if (toStatus === 'Revisi' && !body.revisionNotes?.trim()) {
+            return NextResponse.json(
+              { message: 'Catatan revisi wajib diisi saat mengembalikan tugas untuk diperbaiki.' },
+              { status: 422 }
+            );
+          }
+        }
+      }
+    }
+    // ─────────────────────────────────────────────────────────
+
     // Build dynamic update payload — only scalar fields
     const data: Record<string, any> = {};
-    if (body.status !== undefined)        data.status       = toPrismaStatus(body.status) as any;
-    if (body.priority !== undefined)      data.priority     = body.priority as any;
-    if (body.title !== undefined)         data.title        = body.title;
-    if (body.description !== undefined)   data.description  = body.description;
-    if (body.date !== undefined)          data.date         = body.date;
-    if (body.fileName !== undefined)      data.fileName     = body.fileName;
-    if (body.completedAt !== undefined)   data.completedAt  = body.completedAt;
-    if (body.resultLink !== undefined)    data.resultLink   = body.resultLink;
-    if (body.resultFile !== undefined)    data.resultFile   = body.resultFile;
+    if (body.status !== undefined)        data.status        = toPrismaStatus(body.status) as any;
+    if (body.priority !== undefined)      data.priority      = body.priority as any;
+    if (body.title !== undefined)         data.title         = body.title;
+    if (body.description !== undefined)   data.description   = body.description;
+    if (body.date !== undefined)          data.date          = body.date;
+    if (body.fileName !== undefined)      data.fileName      = body.fileName;
+    if (body.briefFile !== undefined)     data.briefFile     = body.briefFile;
+    if (body.completedAt !== undefined)   data.completedAt   = body.completedAt;
+    if (body.resultLink !== undefined)    data.resultLink    = body.resultLink;
+    if (body.resultFile !== undefined)    data.resultFile    = body.resultFile;
     if (body.revisionCount !== undefined) data.revisionCount = body.revisionCount;
 
     // Resolve new partnerId if partner name changed
@@ -111,7 +200,7 @@ export async function PUT(
       await prisma.taskRevision.create({
         data: {
           taskId: id,
-          revisionNumber: existing?.revisionCount ?? 1,
+          revisionNumber: (existing?.revisionCount ?? 0) + 1,
           notes: body.revisionNotes,
         },
       });

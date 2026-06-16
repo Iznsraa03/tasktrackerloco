@@ -44,6 +44,7 @@ function serializeTask(t: any): Task {
     partner: t.partnerEmp?.name ?? '',
     date: t.date,
     fileName: t.fileName ?? '',
+    briefFile: t.briefFile ?? '',
     revisionCount: t.revisionCount,
     completedAt: t.completedAt ?? null,
     resultLink: t.resultLink ?? '',
@@ -53,6 +54,12 @@ function serializeTask(t: any): Task {
     assignee: t.assignee?.name ?? '',
     division: (t.assignee?.division?.displayName ?? 'Operation') as Division,
     project: t.project?.name ?? '',
+    revisions: t.revisions?.map((r: any) => ({
+      id: r.id,
+      revisionNumber: r.revisionNumber,
+      notes: r.notes,
+      createdAt: r.createdAt?.toISOString?.() ?? String(r.createdAt),
+    })) ?? [],
   };
 }
 
@@ -84,7 +91,7 @@ export async function GET(request: Request) {
         partnerEmp: { select: { name: true } },
         project: { select: { name: true } },
         approvals: { include: { division: true } },
-        revisions: { orderBy: { createdAt: 'desc' }, take: 1 },
+        revisions: { orderBy: { createdAt: 'desc' } }, // Semua revisi untuk modal detail
       },
     });
     return NextResponse.json(rows.map(serializeTask));
@@ -102,9 +109,14 @@ export async function POST(request: Request) {
     // Resolve assignee by name
     const assigneeEmp = await prisma.employee.findFirst({
       where: { name: body.assignee },
+      include: { division: true },
     });
     if (!assigneeEmp) {
       return NextResponse.json({ message: `Karyawan "${body.assignee}" tidak ditemukan.` }, { status: 422 });
+    }
+
+    if (body.division && assigneeEmp.division?.displayName !== body.division && assigneeEmp.division?.name !== body.division) {
+      return NextResponse.json({ message: `Karyawan "${body.assignee}" bukan berasal dari divisi ${body.division}.` }, { status: 400 });
     }
 
     // Validasi otorisasi pembuatan tugas untuk non-Admin
@@ -146,6 +158,7 @@ export async function POST(request: Request) {
         taskType: (body.taskType ?? 'Core') as any,
         date: body.date,
         fileName: body.fileName ?? '',
+        briefFile: body.briefFile ?? '',
         revisionCount: 0,
         completedAt: null,
         resultLink: '',
@@ -159,7 +172,7 @@ export async function POST(request: Request) {
         partnerEmp: { select: { name: true } },
         project: { select: { name: true } },
         approvals: { include: { division: true } },
-        revisions: { orderBy: { createdAt: 'desc' }, take: 1 },
+        revisions: { orderBy: { createdAt: 'desc' } },
       },
     });
 

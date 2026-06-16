@@ -48,7 +48,13 @@ export default function CalendarPage({ mode, tasks, projects, employees, current
 
   const isAdmin = currentUser.role === 'Admin';
   const isManager = currentUser.role === 'Manager';
-  const filterEmployees = employees.filter((e) => e.status === 'Aktif' && (isAdmin ? true : e.division === currentUser.division)).map((e) => e.name).sort();
+  const filterEmployees = Array.from(
+    new Set(
+      employees
+        .filter((e) => e.status === 'Aktif' && (isAdmin ? true : e.division === currentUser.division))
+        .map((e) => e.name)
+    )
+  ).sort();
 
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
   const firstDay = new Date(currentYear, currentMonth, 1).getDay();

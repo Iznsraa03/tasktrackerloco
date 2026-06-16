@@ -49,12 +49,14 @@ export interface Task {
   priority: TaskPriority;
   date: string;
   fileName: string;
+  briefFile: string;
   revisionCount: number;
   completedAt: string | null;
   resultLink: string;
   resultFile: string;
   revisionNotes: string;
   approvedBy: string[];
+  revisions?: Array<{ id: string; revisionNumber: number; notes: string; createdAt: string }>;
 }
 
 export interface KPIResult {
@@ -113,6 +115,7 @@ export interface NewTaskForm {
   partner: string;
   date: string;
   fileName: string;
+  briefFile: string;
   revisionCount: number;
   completedAt: string | null;
   resultLink: string;
