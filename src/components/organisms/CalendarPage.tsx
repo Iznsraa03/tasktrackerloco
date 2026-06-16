@@ -15,7 +15,7 @@ interface CalendarPageProps {
   projects: Project[];
   employees: Employee[];
   currentUser: Employee;
-  onViewTask: (taskId: string) => void;
+  onViewTask: (searchValue: string) => void;
   onViewProject: (project: Project) => void;
 }
 
@@ -174,7 +174,7 @@ export default function CalendarPage({ mode, tasks, projects, employees, current
                           {dayTasks.map((t) => (
                             <div
                               key={t.id}
-                              onClick={(e) => { e.stopPropagation(); onViewTask(t.id); }}
+                              onClick={(e) => { e.stopPropagation(); onViewTask(t.title); }}
                               className={`text-[9px] font-medium px-1.5 py-0.5 rounded truncate cursor-pointer ${t.status === 'Approved' ? 'bg-emerald-500/10 text-emerald-400' : t.status === 'Done' ? 'bg-slate-500/10 text-slate-400' : 'bg-orange-500/10 text-orange-400'}`}
                               title={t.title}
                             >

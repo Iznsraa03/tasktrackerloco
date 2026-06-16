@@ -579,10 +579,14 @@ export default function App() {
   };
 
   const handleNotificationClick = (taskId: string) => {
-    setTaskInitialSearch(taskId);
+    const task = tasks.find((t) => t.id === taskId);
+    const searchVal = task ? task.title : taskId;
+    setTaskInitialSearch(searchVal);
     setTaskInitialStatus('all');
     setTaskInitialMonth('all');
-    handleSidebarNav('tasks');
+    setPageHistory([]);
+    setActivePage('tasks');
+    setSelectedProject(null);
   };
 
   // ─── Loading state ─────────────────────────────────────────────
@@ -699,7 +703,7 @@ export default function App() {
                   <tbody className="divide-y divide-white/[0.03]">
                     {tasks.filter((t) => t.project === selectedProject.name).map((task) => (
                       <tr key={task.id}
-                        onClick={() => { setTaskInitialSearch(task.id); setTaskInitialStatus('all'); setTaskInitialMonth('all'); navigateTo('tasks'); }}
+                        onClick={() => { setTaskInitialSearch(task.title); setTaskInitialStatus('all'); setTaskInitialMonth('all'); navigateTo('tasks'); }}
                         className="hover:bg-white/[0.02] cursor-pointer transition-colors group">
                         <td className="py-4 px-4 font-medium text-slate-300 group-hover:text-blue-400 transition-colors">{task.title}</td>
                         <td className="py-4 px-4 text-slate-500">{task.assignee}</td>

@@ -94,6 +94,18 @@ export default function TasksPage({
     setIsMounted(true);
   }, []);
 
+  useEffect(() => {
+    setSearch(initialSearch);
+  }, [initialSearch]);
+
+  useEffect(() => {
+    setFilterStatus(initialStatusFilter);
+  }, [initialStatusFilter]);
+
+  useEffect(() => {
+    setFilterMonth(initialMonthFilter);
+  }, [initialMonthFilter]);
+
   const isAdmin = currentUser.role === 'Admin';
   const isManager = currentUser.role === 'Manager';
   const isKaryawan = currentUser.role === 'Karyawan';
