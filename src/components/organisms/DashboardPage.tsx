@@ -51,7 +51,7 @@ export default function DashboardPage({
   /* Project analytics */
   const activeProjects = projects.map((proj) => {
     const tasksInProj = filtered.filter((t) => t.project === proj.name);
-    const completedTasks = tasksInProj.filter((t) => t.status === 'Approved' || t.status === 'Done').length;
+    const completedTasks = tasksInProj.filter((t) => t.status === 'Approved').length;
     const totalTasks = tasksInProj.length;
     const progress = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
 
@@ -59,7 +59,7 @@ export default function DashboardPage({
     tasksInProj.forEach((t) => {
       if (!assigneeStats[t.assignee]) assigneeStats[t.assignee] = { name: t.assignee, completed: 0, total: 0 };
       assigneeStats[t.assignee].total += 1;
-      if (t.status === 'Approved' || t.status === 'Done') assigneeStats[t.assignee].completed += 1;
+      if (t.status === 'Approved') assigneeStats[t.assignee].completed += 1;
     });
     const sorted = Object.values(assigneeStats).sort((a, b) => b.completed - a.completed);
     const topAchiever = sorted.length > 0 && sorted[0].completed > 0 ? sorted[0] : null;
@@ -139,7 +139,7 @@ export default function DashboardPage({
         />
         <StatCard
           title="Tugas Selesai"
-          value={filtered.filter((t) => t.status === 'Done' || t.status === 'Approved').length}
+          value={filtered.filter((t) => t.status === 'Approved').length}
           icon={<CheckCircle2 size={22} />}
           color="green"
           onClick={() => onNavigateToTasks('Completed', dashboardMonth)}

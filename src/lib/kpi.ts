@@ -31,7 +31,7 @@ export function calculateKPI(
   );
 
   const totalTask = periodTasks.length;
-  const taskCompletedList = periodTasks.filter((t) => t.status === 'Approved' || t.status === 'Done');
+  const taskCompletedList = periodTasks.filter((t) => t.status === 'Approved');
   const taskCompleted = taskCompletedList.length;
   const taskOnTime = taskCompletedList.filter(
     (t) => t.status === 'Approved' && t.completedAt && t.completedAt <= t.date

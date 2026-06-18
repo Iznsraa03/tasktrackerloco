@@ -128,7 +128,7 @@ export default function TasksPage({
     const matchStatus =
       filterStatus === 'all' ||
       t.status === filterStatus ||
-      (filterStatus === 'Completed' && (t.status === 'Done' || t.status === 'Approved'));
+      (filterStatus === 'Completed' && t.status === 'Approved');
     const matchSearch = !search ||
       t.title.toLowerCase().includes(search.toLowerCase()) ||
       t.date.includes(search) ||

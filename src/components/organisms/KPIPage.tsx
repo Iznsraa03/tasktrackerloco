@@ -51,7 +51,7 @@ export default function KPIPage({ employees, tasks, currentUser }: KPIPageProps)
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-slate-900">Key Performance Indicator</h1>
-          <p className="text-sm text-slate-600 mt-1">Evaluasi performa berdasarkan tugas yang diselesaikan (Done & Approved).</p>
+          <p className="text-sm text-slate-600 mt-1">Evaluasi performa berdasarkan tugas yang diselesaikan (Approved).</p>
         </div>
         <select
           value={kpiMonth}
