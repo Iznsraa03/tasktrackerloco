@@ -11,10 +11,11 @@ import React, { useState } from 'react';
 import {
   X, FileText, Link2, Download, ExternalLink, CheckCircle2,
   MessageSquareWarning, Clock, AlertTriangle, User, Users,
-  FolderOpen, Calendar, Tag, Zap, History, ShieldCheck, Loader2,
+  FolderOpen, Calendar, Tag, Zap, History, ShieldCheck, Loader2, Edit, Eye,
 } from 'lucide-react';
 import Badge from '../atoms/Badge';
 import Button from '../atoms/Button';
+import { FilePreviewModal } from './FilePreviewModal';
 import type { Task, Employee, TaskStatus } from '@/src/types';
 
 interface TaskDetailModalProps {
@@ -26,6 +27,7 @@ interface TaskDetailModalProps {
   onRevise: (task: Task) => void;
   onDelete: (taskId: string) => void;
   onSubmitResult: (task: Task) => void;
+  onEdit?: (task: Task) => void;
 }
 
 // ─── Helper: Badge warna prioritas ───────────────────────────
@@ -43,12 +45,23 @@ function PriorityBadge({ priority }: { priority: string }) {
 }
 
 // ─── Helper: Tampilkan file hasil kerja ─────────────────────
-function ResultDisplay({ resultLink, resultFile }: { resultLink: string; resultFile: string }) {
+function ResultDisplay({ 
+  resultLink, 
+  resultFile,
+  onPreview,
+}: { 
+  resultLink: string; 
+  resultFile: string;
+  onPreview: (url: string, name: string) => void;
+}) {
   if (!resultLink && !resultFile) return null;
 
   const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
+  const previewableExtensions = [...imageExtensions, 'pdf'];
   const fileExt = resultFile.split('.').pop()?.toLowerCase() ?? '';
   const isImage = imageExtensions.includes(fileExt);
+  const isPreviewable = previewableExtensions.includes(fileExt);
+  const fileName = resultFile.split('/').pop() ?? 'bukti-hasil-kerja';
 
   return (
     <div className="mt-3 p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
@@ -76,14 +89,25 @@ function ResultDisplay({ resultLink, resultFile }: { resultLink: string; resultF
               />
             </div>
           ) : null}
-          <a
-            href={resultFile}
-            download
-            className="mt-1 flex items-center gap-2 text-sm text-emerald-700 font-medium hover:text-emerald-500 transition-colors"
-          >
-            <Download size={14} />
-            Unduh File Hasil Kerja
-          </a>
+          <div className="flex flex-wrap items-center gap-3 mt-2">
+            <a
+              href={resultFile}
+              download
+              className="flex items-center gap-2 text-sm text-emerald-700 font-medium hover:text-emerald-500 transition-colors"
+            >
+              <Download size={14} />
+              Unduh File
+            </a>
+            {isPreviewable && (
+              <button
+                onClick={() => onPreview(resultFile, fileName)}
+                className="flex items-center gap-2 text-sm text-emerald-700 font-medium hover:text-emerald-500 transition-colors"
+              >
+                <Eye size={14} />
+                Pratinjau
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -91,21 +115,41 @@ function ResultDisplay({ resultLink, resultFile }: { resultLink: string; resultF
 }
 
 // ─── Helper: Tampilkan file brief ────────────────────────────
-function BriefDisplay({ briefFile }: { briefFile: string }) {
+function BriefDisplay({ 
+  briefFile,
+  onPreview,
+}: { 
+  briefFile: string;
+  onPreview: (url: string, name: string) => void;
+}) {
   if (!briefFile) return null;
   const fileName = briefFile.split('/').pop() ?? 'brief';
+  const fileExt = fileName.split('.').pop()?.toLowerCase() ?? '';
+  const isPreviewable = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'pdf'].includes(fileExt);
+
   return (
-    <a
-      href={briefFile}
-      download
-      target="_blank"
-      rel="noreferrer"
-      className="flex items-center gap-2 mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 hover:bg-slate-100 hover:text-[#D2001A] transition-colors group"
-    >
-      <FileText size={14} className="text-slate-400 group-hover:text-[#D2001A]" />
-      <span className="truncate font-medium">{fileName}</span>
-      <Download size={12} className="ml-auto text-slate-400 group-hover:text-[#D2001A]" />
-    </a>
+    <div className="flex items-center gap-2 mt-1">
+      <a
+        href={briefFile}
+        download
+        target="_blank"
+        rel="noreferrer"
+        className="flex-1 flex items-center gap-2 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 hover:bg-slate-100 hover:text-[#D2001A] transition-colors group"
+      >
+        <FileText size={14} className="text-slate-400 group-hover:text-[#D2001A]" />
+        <span className="truncate font-medium">{fileName}</span>
+        <Download size={12} className="ml-auto text-slate-400 group-hover:text-[#D2001A]" />
+      </a>
+      {isPreviewable && (
+        <button
+          onClick={() => onPreview(briefFile, fileName)}
+          className="flex items-center justify-center p-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-400 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition-colors"
+          title="Pratinjau Berkas"
+        >
+          <Eye size={16} />
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -119,8 +163,16 @@ export function TaskDetailModal({
   onRevise,
   onDelete,
   onSubmitResult,
+  onEdit,
 }: TaskDetailModalProps) {
   const [deletePending, setDeletePending] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewName, setPreviewName] = useState<string>('');
+
+  const handlePreview = (url: string, name: string) => {
+    setPreviewUrl(url);
+    setPreviewName(name);
+  };
 
   if (!task) return null;
 
@@ -307,13 +359,17 @@ export function TaskDetailModal({
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1">
                   <FileText size={10} /> File Brief
                 </p>
-                <BriefDisplay briefFile={task.briefFile} />
+                <BriefDisplay briefFile={task.briefFile} onPreview={handlePreview} />
               </div>
             )}
 
             {/* Bukti Hasil Kerja */}
             {(task.resultLink || task.resultFile) && (
-              <ResultDisplay resultLink={task.resultLink} resultFile={task.resultFile} />
+              <ResultDisplay 
+                resultLink={task.resultLink} 
+                resultFile={task.resultFile} 
+                onPreview={handlePreview}
+              />
             )}
 
             {/* Catatan Revisi Aktif */}
@@ -420,6 +476,16 @@ export function TaskDetailModal({
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Edit Tugas */}
+            {canDelete && onEdit && (
+              <button
+                onClick={() => { onEdit(task); onClose(); }}
+                className="flex items-center gap-1.5 text-sm font-bold text-blue-600 hover:text-white hover:bg-blue-600 border border-blue-200 hover:border-blue-600 px-3 py-2 rounded-lg transition-all"
+              >
+                <Edit size={14} />
+                Edit
+              </button>
+            )}
             {/* Hapus Tugas */}
             {canDelete && (
               <button
@@ -439,6 +505,13 @@ export function TaskDetailModal({
           </div>
         </div>
       </div>
+
+      <FilePreviewModal
+        isOpen={!!previewUrl}
+        fileUrl={previewUrl}
+        fileName={previewName}
+        onClose={() => setPreviewUrl(null)}
+      />
     </div>
   );
 }

@@ -60,8 +60,8 @@ export async function POST(request: Request) {
       .slice(0, 50);                       // Batasi panjang nama
     const uniqueFileName = `${timestamp}-${uuid}-${safeName}.${ext}`;
 
-    // Pastikan direktori upload tersedia
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+    // Pastikan direktori upload tersedia (di root direktori, bukan di public)
+    const uploadDir = path.join(process.cwd(), 'uploads');
     if (!existsSync(uploadDir)) {
       await mkdir(uploadDir, { recursive: true });
     }

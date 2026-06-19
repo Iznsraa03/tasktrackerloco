@@ -21,6 +21,7 @@ import Badge from '../atoms/Badge';
 import Button from '../atoms/Button';
 import { TaskDetailModal } from './TaskDetailModal';
 import type { Task, Project, Employee, TaskStatus } from '@/src/types';
+import { getBusinessPeriod } from '@/src/lib/dateUtils';
 
 interface ImportRow {
   title: string;
@@ -50,6 +51,7 @@ interface TasksPageProps {
   onDelete: (taskId: string) => void;
   onSubmitResult: (task: Task) => void;
   onBulkImport: (rows: ImportRow[]) => Promise<{ success: number; errors: string[] }>;
+  onEdit: (task: Task) => void;
 }
 
 // ─── CSV Template kolom yang diharapkan ──────────────────────
@@ -72,6 +74,7 @@ export default function TasksPage({
   onDelete,
   onSubmitResult,
   onBulkImport,
+  onEdit,
 }: TasksPageProps) {
   const [filterMonth, setFilterMonth] = useState(initialMonthFilter);
   const [filterName, setFilterName] = useState('all');
@@ -121,7 +124,7 @@ export default function TasksPage({
   ).sort();
 
   const displayed = tasks.filter((t) => {
-    const taskMonth = t.date ? t.date.substring(5, 7) : '';
+    const taskMonth = t.date ? (getBusinessPeriod(t.date)?.monthValue || '') : '';
     const matchMonth = filterMonth === 'all' || taskMonth === filterMonth;
     const matchName = filterName === 'all' || t.assignee === filterName || t.partner === filterName;
     const matchProject = filterProject === 'all' || t.project === filterProject;
@@ -524,6 +527,10 @@ export default function TasksPage({
           }}
           onSubmitResult={(task) => {
             onSubmitResult(task);
+          }}
+          onEdit={(task) => {
+            onEdit(task);
+            setSelectedTask(null);
           }}
         />,
         document.body

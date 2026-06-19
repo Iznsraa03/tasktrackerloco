@@ -184,6 +184,39 @@ export async function PUT(
     if (body.resultFile !== undefined)    data.resultFile    = body.resultFile;
     if (body.revisionCount !== undefined) data.revisionCount = body.revisionCount;
 
+    if (body.taskType !== undefined)      data.taskType      = body.taskType as any;
+    if (body.priority !== undefined)      data.priority      = body.priority as any;
+
+    // Resolve new assigneeId if assignee name changed
+    if (body.assignee !== undefined) {
+      const assigneeEmp = await prisma.employee.findFirst({
+        where: { name: body.assignee },
+        include: { division: true },
+      });
+      if (!assigneeEmp) {
+        return NextResponse.json({ message: `Karyawan "${body.assignee}" tidak ditemukan.` }, { status: 422 });
+      }
+
+      // Validasi otorisasi jika non-Admin
+      if (user && userRole !== 'Admin') {
+        if (assigneeEmp.divisionId !== user.divisionId) {
+          return NextResponse.json({ message: 'Anda hanya diizinkan memberikan tugas kepada karyawan di divisi Anda sendiri.' }, { status: 403 });
+        }
+      }
+      data.assigneeId = assigneeEmp.id;
+    }
+
+    // Resolve new projectId if project name changed
+    if (body.project !== undefined) {
+      const proj = await prisma.project.findFirst({
+        where: { name: body.project },
+      });
+      if (!proj) {
+        return NextResponse.json({ message: `Proyek "${body.project}" tidak ditemukan.` }, { status: 422 });
+      }
+      data.projectId = proj.id;
+    }
+
     // Resolve new partnerId if partner name changed
     if (body.partner !== undefined) {
       if (body.partner) {

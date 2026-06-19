@@ -44,6 +44,7 @@ const defaultNewTask = (): NewTaskForm => ({
   resultLink: '',
   resultFile: '',
   approvedBy: [],
+  priority: 'Medium',
 });
 
 const defaultNewEmployee = (): NewEmployeeForm => ({
@@ -185,6 +186,7 @@ export default function App() {
   // Task modal state
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [newTask, setNewTask] = useState<NewTaskForm>(defaultNewTask());
+  const [editTask, setEditTask] = useState<Task | null>(null);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
 
   // Result modal
@@ -324,6 +326,19 @@ export default function App() {
     } catch (err: any) {
       console.error('[handleAddTask]', err);
       alert(err?.response?.data?.message ?? 'Gagal membuat tugas.');
+    }
+  };
+
+  const handleUpdateTask = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editTask) return;
+    try {
+      const updated = await api.tasks.update(editTask.id, editTask);
+      setTasks((prev) => prev.map((t) => t.id === editTask.id ? updated : t));
+      setEditTask(null);
+    } catch (err: any) {
+      console.error('[handleUpdateTask]', err);
+      alert(err?.response?.data?.message ?? 'Gagal memperbarui tugas.');
     }
   };
 
@@ -661,6 +676,7 @@ export default function App() {
             onDelete={handleDeleteTask}
             onSubmitResult={(task) => { setTaskToComplete(task); setIsResultModalOpen(true); }}
             onBulkImport={handleBulkImport}
+            onEdit={(task) => setEditTask(task)}
           />
         );
       case 'projects':
@@ -790,6 +806,31 @@ export default function App() {
         onSubmit={handleAddTask}
         onGenerateAI={generateAIDescription}
       />
+
+      {editTask && (
+        <TaskModal
+          isOpen
+          mode="edit"
+          task={editTask}
+          employees={employees}
+          projects={projects}
+          currentUser={currentUser}
+          isGeneratingAI={isGeneratingAI}
+          onClose={() => setEditTask(null)}
+          onChange={(updates) => setEditTask((prev) => prev ? { ...prev, ...updates } as Task : null)}
+          onSubmit={handleUpdateTask}
+          onGenerateAI={async () => {
+            if (!editTask.title) return;
+            setIsGeneratingAI(true);
+            await new Promise((r) => setTimeout(r, 1500));
+            setEditTask((prev) => prev ? {
+              ...prev,
+              description: `Berdasarkan judul "${prev.title}", tugas ini mencakup kegiatan perencanaan, eksekusi, dan evaluasi yang terstruktur. Pastikan semua output terdokumentasi dengan baik dan sesuai dengan standar yang berlaku di ${prev.division}.`,
+            } as Task : null);
+            setIsGeneratingAI(false);
+          }}
+        />
+      )}
 
       <ResultModal
         isOpen={isResultModalOpen}

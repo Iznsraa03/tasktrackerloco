@@ -37,22 +37,24 @@ const selectClass = 'input-light border border-slate-200 w-full py-2.5 px-3 text
 // ─── 1. Task Modal ──────────────────────────────────────────────
 interface TaskModalProps {
   isOpen: boolean;
-  task: NewTaskForm;
+  mode?: 'add' | 'edit';
+  task: NewTaskForm | Task;
   employees: Employee[];
   projects: Project[];
   currentUser: Employee;
   isGeneratingAI: boolean;
   onClose: () => void;
-  onChange: (updates: Partial<NewTaskForm>) => void;
+  onChange: (updates: Partial<NewTaskForm | Task>) => void;
   onSubmit: (e: React.FormEvent) => void;
   onGenerateAI: () => void;
   onBriefFileChange?: (filePath: string) => void;
 }
 
-export function TaskModal({ isOpen, task, employees, projects, currentUser, isGeneratingAI, onClose, onChange, onSubmit, onGenerateAI, onBriefFileChange }: TaskModalProps) {
+export function TaskModal({ isOpen, mode = 'add', task, employees, projects, currentUser, isGeneratingAI, onClose, onChange, onSubmit, onGenerateAI, onBriefFileChange }: TaskModalProps) {
   if (!isOpen) return null;
   const isAdmin = currentUser.role === 'Admin';
   const isKaryawan = currentUser.role === 'Karyawan';
+  const isEdit = mode === 'edit';
   const [briefUploading, setBriefUploading] = React.useState(false);
   const [briefError, setBriefError] = React.useState('');
 
@@ -81,7 +83,7 @@ export function TaskModal({ isOpen, task, employees, projects, currentUser, isGe
       <div className="max-w-2xl mx-auto bg-white rounded-2xl border border-slate-200/60 shadow-2xl overflow-hidden">
         <div className="flex items-center justify-between border-b border-slate-100 p-6">
           <h3 className="text-lg font-black text-slate-900">
-            {isKaryawan && task.taskType === 'Improvement' ? 'Form Inisiatif Improvement' : 'Form Task Order Baru'}
+            {isEdit ? 'Edit Tugas' : (isKaryawan && task.taskType === 'Improvement' ? 'Form Inisiatif Improvement' : 'Form Task Order Baru')}
           </h3>
           <button onClick={onClose} className="p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"><X size={18} /></button>
         </div>
@@ -200,13 +202,26 @@ export function TaskModal({ isOpen, task, employees, projects, currentUser, isGe
             </div>
           </FormField>
 
-          <FormField label="Tanggal Deadline" required>
-            <input required type="date" value={task.date} onChange={(e) => onChange({ date: e.target.value })} className={inputClass} />
-          </FormField>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <FormField label="Prioritas Tugas" required>
+              <select
+                required value={(task as any).priority || 'Medium'}
+                onChange={(e) => onChange({ priority: e.target.value as any })}
+                className={selectClass}
+              >
+                <option value="High">High</option>
+                <option value="Medium">Medium</option>
+                <option value="Low">Low</option>
+              </select>
+            </FormField>
+            <FormField label="Tanggal Deadline" required>
+              <input required type="date" value={task.date} onChange={(e) => onChange({ date: e.target.value })} className={inputClass} />
+            </FormField>
+          </div>
 
           <div className="flex justify-end gap-3 pt-2 border-t border-slate-100">
             <Button type="button" variant="secondary" onClick={onClose}>Batal</Button>
-            <Button type="submit" variant="primary" disabled={briefUploading}>Simpan Order</Button>
+            <Button type="submit" variant="primary" disabled={briefUploading}>{isEdit ? 'Update Tugas' : 'Simpan Order'}</Button>
           </div>
         </form>
       </div>

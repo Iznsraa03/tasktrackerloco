@@ -5,16 +5,13 @@
 
 import type { Task, Employee, KPIResult } from '@/src/types';
 
+import { getBusinessPeriod } from '@/src/lib/dateUtils';
+
 /** Determine KPI period month from task date.
  * Tasks dated 1-4 of a month count toward the previous period. */
 export function getPeriodMonth(dateString: string): string | null {
-  if (!dateString) return null;
-  const [, m, d] = dateString.split('-').map(Number);
-  if (d <= 4) {
-    const prevM = m - 1 === 0 ? 12 : m - 1;
-    return String(prevM).padStart(2, '0');
-  }
-  return String(m).padStart(2, '0');
+  const period = getBusinessPeriod(dateString);
+  return period ? period.monthValue : null;
 }
 
 /** Calculate KPI score for a single employee filtered by month. */

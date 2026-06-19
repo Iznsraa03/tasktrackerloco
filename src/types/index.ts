@@ -121,6 +121,7 @@ export interface NewTaskForm {
   resultLink: string;
   resultFile: string;
   approvedBy: string[];
+  priority: TaskPriority;
 }
 
 export interface NewEmployeeForm {

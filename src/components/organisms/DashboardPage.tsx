@@ -15,6 +15,7 @@ import {
 import StatCard from '../molecules/StatCard';
 import Badge from '../atoms/Badge';
 import type { Task, Project, Employee, Page, ProjectStatus } from '@/src/types';
+import { getBusinessPeriod } from '@/src/lib/dateUtils';
 
 interface DashboardPageProps {
   currentUser: Employee;
@@ -44,7 +45,7 @@ export default function DashboardPage({
   const filtered = tasks.filter((t) => {
     const matchMonth =
       dashboardMonth === 'all' ||
-      (t.date && t.date.substring(5, 7) === dashboardMonth);
+      (t.date && getBusinessPeriod(t.date)?.monthValue === dashboardMonth);
     return matchMonth;
   });
 
@@ -68,8 +69,8 @@ export default function DashboardPage({
     return { ...proj, tasksInProj, completedTasks, totalTasks, progress, topAchiever, bottomAchiever };
   }).filter((p) => {
     if (dashboardMonth === 'all') return true;
-    const startM = p.startDate?.substring(5, 7);
-    const endM = p.endDate?.substring(5, 7) ?? startM;
+    const startM = p.startDate ? getBusinessPeriod(p.startDate)?.monthValue : undefined;
+    const endM = p.endDate ? getBusinessPeriod(p.endDate)?.monthValue : startM;
     return startM === dashboardMonth || endM === dashboardMonth || p.tasksInProj.length > 0;
   });
 
