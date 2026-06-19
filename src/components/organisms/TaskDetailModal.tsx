@@ -21,6 +21,7 @@ import type { Task, Employee, TaskStatus } from '@/src/types';
 interface TaskDetailModalProps {
   task: Task | null;
   currentUser: Employee;
+  employees: Employee[];
   onClose: () => void;
   onStatusChange: (taskId: string, newStatus: string) => void;
   onApprove: (taskId: string) => void;
@@ -71,10 +72,10 @@ function ResultDisplay({
           href={resultLink}
           target="_blank"
           rel="noreferrer"
-          className="flex items-center gap-2 text-sm text-emerald-700 font-medium hover:text-emerald-500 transition-colors"
+          className="flex items-center gap-2 text-sm text-emerald-700 font-medium hover:text-emerald-500 transition-colors max-w-full"
         >
-          <ExternalLink size={14} />
-          <span className="truncate">{resultLink}</span>
+          <ExternalLink size={14} className="shrink-0" />
+          <span className="truncate min-w-0">{resultLink}</span>
         </a>
       )}
       {resultFile && (
@@ -134,11 +135,11 @@ function BriefDisplay({
         download
         target="_blank"
         rel="noreferrer"
-        className="flex-1 flex items-center gap-2 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 hover:bg-slate-100 hover:text-[#D2001A] transition-colors group"
+        className="flex-1 min-w-0 flex items-center gap-2 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 hover:bg-slate-100 hover:text-[#D2001A] transition-colors group"
       >
-        <FileText size={14} className="text-slate-400 group-hover:text-[#D2001A]" />
+        <FileText size={14} className="text-slate-400 group-hover:text-[#D2001A] shrink-0" />
         <span className="truncate font-medium">{fileName}</span>
-        <Download size={12} className="ml-auto text-slate-400 group-hover:text-[#D2001A]" />
+        <Download size={12} className="ml-auto text-slate-400 group-hover:text-[#D2001A] shrink-0" />
       </a>
       {isPreviewable && (
         <button
@@ -157,6 +158,7 @@ function BriefDisplay({
 export function TaskDetailModal({
   task,
   currentUser,
+  employees,
   onClose,
   onStatusChange,
   onApprove,
@@ -180,31 +182,49 @@ export function TaskDetailModal({
   const isManager = currentUser.role === 'Manager';
   const isKaryawan = currentUser.role === 'Karyawan';
   const isAssignee = currentUser.name === task.assignee;
-  const isPartner = currentUser.name === task.partner;
+  const isPartner = task.partner ? task.partner.split(', ').includes(currentUser.name) : false;
   const isOwner = isAssignee || isPartner;
 
   // ─── Logika Aksi yang Tersedia ────────────────────────────
-  // Karyawan: perubahan status To Do→In Progress, In Progress→Done
   const canStartTask = isKaryawan && isOwner && task.status === 'To Do';
   const canSubmitResult = isKaryawan && isOwner && (task.status === 'In Progress' || task.status === 'Revisi');
 
   // Manager/Admin: approve atau revisi dari status Done
   const canApproveOrRevise = task.status === 'Done' && (isAdmin || isManager);
+  const assigneeEmp = employees.find((e) => e.name === task.assignee);
+  const partnerNames = task.partner ? task.partner.split(', ') : [];
+  const partnerEmps = employees.filter((e) => partnerNames.includes(e.name));
+  
+  const allPartnersHaveApproved = partnerNames.length > 0 && partnerNames.every((p) => task.approvedBy?.includes(p));
+  const currentUserIsPartner = partnerNames.includes(currentUser.name);
+  const currentUserPartnerHasApproved = task.approvedBy?.includes(currentUser.name);
+
+  const allPartnerMgrsHaveApproved = partnerEmps.length > 0 && partnerEmps.every((e) => task.approvedBy?.includes(e.division));
+  const assigneeMgrHasApproved = task.approvedBy?.includes(assigneeEmp?.division ?? '') ?? false;
+
   const canApprove = (() => {
     if (!canApproveOrRevise) return false;
     if (isAdmin) return true;
-    // Logika approval sesuai Smart Approval Routing
+    
     if (task.taskType === 'Support') {
-      const partnerHasApproved = task.approvedBy?.includes(task.partner);
-      if (currentUser.name === task.partner && !partnerHasApproved) return true;
-      // Manager partner juga bisa setujui setelah partner personal approve
+      if (currentUserIsPartner && !currentUserPartnerHasApproved) return true;
+      if (isManager && allPartnersHaveApproved) {
+        const managedPartner = partnerEmps.find(e => e.division === currentUser.division);
+        if (managedPartner && !task.approvedBy?.includes(managedPartner.division)) return true;
+      }
+      return false;
+    } else if (task.taskType === 'Colaboration') {
+      if (isManager && assigneeEmp && currentUser.division === assigneeEmp.division && !assigneeMgrHasApproved) return true;
+      if (isManager) {
+        const managedPartner = partnerEmps.find(e => e.division === currentUser.division);
+        if (managedPartner && !task.approvedBy?.includes(managedPartner.division)) return true;
+      }
       return false;
     }
     return isManager;
   })();
   const canRevise = canApproveOrRevise;
 
-  // Admin dan Manager bisa hapus, Karyawan tidak bisa
   const canDelete = isAdmin || isManager;
 
   const handleDelete = () => {
@@ -216,7 +236,7 @@ export function TaskDetailModal({
   // ─── Status label yang user-friendly ──────────────────────
   const statusLabel =
     task.status === 'Done'
-      ? task.taskType === 'Support' && !task.approvedBy?.includes(task.partner)
+      ? task.taskType === 'Support' && !allPartnersHaveApproved
         ? 'Menunggu Pemohon'
         : 'Menunggu Approval'
       : task.status;
@@ -405,6 +425,17 @@ export function TaskDetailModal({
               ) : (
                 <p className="text-xs text-slate-400 italic">Belum ada approval.</p>
               )}
+              <div className="mt-4 pt-4 border-t border-slate-200">
+                {task.taskType === 'Support' && !allPartnersHaveApproved && (
+                  <span className="flex items-center gap-1 text-slate-500 text-xs"><Clock size={12}/> Menunggu Appv Pemohon</span>
+                )}
+                {task.taskType === 'Support' && allPartnersHaveApproved && !allPartnerMgrsHaveApproved && (
+                  <span className="flex items-center gap-1 text-slate-500 text-xs"><Clock size={12}/> Menunggu Appv Manager Terkait</span>
+                )}
+                {task.taskType === 'Colaboration' && (!assigneeMgrHasApproved || !allPartnerMgrsHaveApproved) && (
+                  <span className="flex items-center gap-1 text-slate-500 text-xs"><Clock size={12}/> Menunggu Appv Manager Terkait</span>
+                )}
+              </div>
             </div>
 
             {/* Riwayat Revisi */}

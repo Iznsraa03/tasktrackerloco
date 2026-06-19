@@ -153,7 +153,7 @@ export default function CalendarPage({ mode, tasks, projects, employees, current
                   if (mode === 'task') {
                     dayTasks = tasks.filter((t) => {
                       if (t.date !== dayObj.dateStr) return false;
-                      if (filterEmp !== 'all') return t.assignee === filterEmp || t.partner === filterEmp;
+                      if (filterEmp !== 'all') return t.assignee === filterEmp || (t.partner && t.partner.split(', ').includes(filterEmp));
                       return true;
                     });
                   }

@@ -21,7 +21,7 @@ export function calculateKPI(
   monthFilter: string
 ): KPIResult {
   const empTasks = allTasks.filter(
-    (t) => t.assignee === emp.name || t.partner === emp.name
+    (t) => t.assignee === emp.name || (t.partner && t.partner.split(', ').includes(emp.name))
   );
   const periodTasks = empTasks.filter(
     (t) => monthFilter === 'all' || getPeriodMonth(t.date) === monthFilter

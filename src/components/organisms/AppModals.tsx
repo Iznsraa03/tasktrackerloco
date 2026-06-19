@@ -136,15 +136,40 @@ export function TaskModal({ isOpen, mode = 'add', task, employees, projects, cur
           {(task.taskType === 'Colaboration' || task.taskType === 'Support') && (
             <div className="bg-orange-500/5 border border-orange-500/15 p-4 rounded-xl">
               <FormField label={task.taskType === 'Support' ? 'Pemohon Bantuan (Requestor)' : 'Partner Kolaborasi'} required>
-                <select
-                  required value={task.partner}
-                  disabled={isKaryawan && task.taskType === 'Support'}
-                  onChange={(e) => onChange({ partner: e.target.value })}
-                  className={selectClass}
-                >
-                  <option value="" disabled>-- Pilih --</option>
-                  {employees.filter((e) => e.status === 'Aktif' && e.name !== task.assignee).map((e) => <option key={e.id} value={e.name}>{e.name}</option>)}
-                </select>
+                <div className="mt-2 border border-slate-200 rounded-xl max-h-48 overflow-y-auto p-3 space-y-1 bg-white custom-scrollbar">
+                  {employees
+                    .filter((e) => e.status === 'Aktif' && e.name !== task.assignee)
+                    .map((e) => {
+                      const selectedPartners = task.partner ? task.partner.split(', ') : [];
+                      const isChecked = selectedPartners.includes(e.name);
+                      return (
+                        <label key={e.id} className="flex items-center gap-3 cursor-pointer hover:bg-slate-50 p-2 rounded-lg transition-colors border border-transparent hover:border-slate-100">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            disabled={isKaryawan && task.taskType === 'Support' && e.name === currentUser.name}
+                            onChange={(event) => {
+                              let nextPartners = [...selectedPartners];
+                              if (event.target.checked) {
+                                nextPartners.push(e.name);
+                              } else {
+                                nextPartners = nextPartners.filter((p) => p !== e.name);
+                              }
+                              onChange({ partner: nextPartners.join(', ') });
+                            }}
+                            className="w-4 h-4 rounded border-slate-300 text-[#D2001A] focus:ring-[#D2001A]"
+                          />
+                          <div className="flex flex-col">
+                            <span className="text-sm font-semibold text-slate-800">{e.name}</span>
+                            <span className="text-[10px] text-slate-500 font-medium">{e.division}</span>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  {employees.filter((e) => e.status === 'Aktif' && e.name !== task.assignee).length === 0 && (
+                    <p className="text-xs text-slate-400 text-center py-2">Tidak ada karyawan tersedia.</p>
+                  )}
+                </div>
               </FormField>
             </div>
           )}

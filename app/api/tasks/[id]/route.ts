@@ -39,7 +39,7 @@ function serializeTask(t: any): Task {
     status: mapStatus(t.status),
     priority: t.priority as TaskPriority,
     taskType: t.taskType as TaskType,
-    partner: t.partnerEmp?.name ?? '',
+    partner: t.partners?.map((p: any) => p.name).join(', ') ?? '',
     date: t.date,
     fileName: t.fileName ?? '',
     briefFile: t.briefFile ?? '',
@@ -65,7 +65,7 @@ function serializeTask(t: any): Task {
 // Standard include for Task with all relations
 const TASK_INCLUDE = {
   assignee: { include: { division: true } },
-  partnerEmp: { select: { name: true } },
+  partners: { select: { name: true, divisionId: true } },
   project: { select: { name: true } },
   approvals: { include: { division: true } },
   revisions: { orderBy: { createdAt: 'desc' as const } }, // Semua revisi untuk modal detail
@@ -91,7 +91,7 @@ export async function PUT(
     // Fetch task yang ada
     const existingTask = await prisma.task.findUnique({
       where: { id },
-      include: { assignee: true, partnerEmp: true },
+      include: { assignee: true, partners: true },
     });
 
     if (!existingTask) {
@@ -102,7 +102,7 @@ export async function PUT(
     if (user && userRole !== 'Admin') {
       if (
         existingTask.assignee.divisionId !== user.divisionId &&
-        existingTask.partnerEmp?.divisionId !== user.divisionId
+        !existingTask.partners.some((p: any) => p.divisionId === user.divisionId)
       ) {
         return NextResponse.json(
           { message: 'Akses ditolak: Anda hanya dapat mengubah tugas di divisi Anda.' },
@@ -122,7 +122,7 @@ export async function PUT(
           // Karyawan hanya boleh mengubah tugas yang ditugaskan kepadanya
           const isOwner =
             existingTask.assigneeId === user.id ||
-            existingTask.partnerId === user.id;
+            existingTask.partners.some((p: any) => p.id === user.id);
 
           if (!isOwner) {
             return NextResponse.json(
@@ -217,13 +217,18 @@ export async function PUT(
       data.projectId = proj.id;
     }
 
-    // Resolve new partnerId if partner name changed
+    // Resolve new partners if partner name changed
     if (body.partner !== undefined) {
       if (body.partner) {
-        const partnerEmp = await prisma.employee.findFirst({ where: { name: body.partner } });
-        data.partnerId = partnerEmp?.id ?? null;
+        const partnerNames = body.partner.split(', ');
+        const partnerEmps = await prisma.employee.findMany({ where: { name: { in: partnerNames } } });
+        data.partners = {
+          set: partnerEmps.map((emp) => ({ id: emp.id })),
+        };
       } else {
-        data.partnerId = null;
+        data.partners = {
+          set: [],
+        };
       }
     }
 
@@ -283,8 +288,8 @@ export async function DELETE(
     if (userEmail) {
       const user = await prisma.employee.findUnique({ where: { email: userEmail }, include: { role: true } });
       if (user && user.role.name !== 'Admin') {
-        const existingTask = await prisma.task.findUnique({ where: { id }, include: { assignee: true, partnerEmp: true } });
-        if (!existingTask || (existingTask.assignee.divisionId !== user.divisionId && existingTask.partnerEmp?.divisionId !== user.divisionId)) {
+        const existingTask = await prisma.task.findUnique({ where: { id }, include: { assignee: true, partners: true } });
+        if (!existingTask || (existingTask.assignee.divisionId !== user.divisionId && !existingTask.partners.some((p: any) => p.divisionId === user.divisionId))) {
           return NextResponse.json({ message: 'Akses ditolak: Anda hanya dapat menghapus tugas di divisi Anda.' }, { status: 403 });
         }
       }

@@ -33,7 +33,7 @@ export async function GET(request: Request) {
         taskWhereClause = {
           OR: [
             { assignee: { divisionId: user.divisionId } },
-            { partnerEmp: { divisionId: user.divisionId } },
+            { partners: { some: { divisionId: user.divisionId } } },
           ],
         };
       }
@@ -54,7 +54,7 @@ export async function GET(request: Request) {
         orderBy: { createdAt: 'desc' },
         include: {
           assignee: { include: { division: true } },
-          partnerEmp: { select: { name: true } },
+          partners: { select: { name: true, divisionId: true } },
           project: { select: { name: true } },
           approvals: { include: { division: true } },
           revisions: { orderBy: { createdAt: 'desc' } }, // Semua revisi
@@ -94,7 +94,7 @@ export async function GET(request: Request) {
       status: mapStatus(t.status),
       priority: t.priority as TaskPriority,
       taskType: t.taskType as TaskType,
-      partner: t.partnerEmp?.name ?? '',
+      partner: t.partners?.map((p: any) => p.name).join(', ') ?? '',
       date: t.date,
       fileName: t.fileName ?? '',
       briefFile: t.briefFile ?? '',

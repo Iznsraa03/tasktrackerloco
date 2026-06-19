@@ -41,7 +41,7 @@ function serializeTask(t: any): Task {
     status: mapStatus(t.status),
     priority: t.priority as TaskPriority,
     taskType: t.taskType as TaskType,
-    partner: t.partnerEmp?.name ?? '',
+    partner: t.partners?.map((p: any) => p.name).join(', ') ?? '',
     date: t.date,
     fileName: t.fileName ?? '',
     briefFile: t.briefFile ?? '',
@@ -77,7 +77,7 @@ export async function GET(request: Request) {
         whereClause = {
           OR: [
             { assignee: { divisionId: user.divisionId } },
-            { partnerEmp: { divisionId: user.divisionId } },
+            { partners: { some: { divisionId: user.divisionId } } },
           ],
         };
       }
@@ -88,7 +88,7 @@ export async function GET(request: Request) {
       orderBy: { createdAt: 'desc' },
       include: {
         assignee: { include: { division: true } },
-        partnerEmp: { select: { name: true } },
+        partners: { select: { name: true, divisionId: true } },
         project: { select: { name: true } },
         approvals: { include: { division: true } },
         revisions: { orderBy: { createdAt: 'desc' } }, // Semua revisi untuk modal detail
@@ -140,13 +140,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: `Proyek "${body.project}" tidak ditemukan.` }, { status: 422 });
     }
 
-    // Resolve partner by name (optional)
-    let partnerId: string | null = null;
+    // Resolve multiple partners by name (optional)
+    let partnersConnect: { id: string }[] = [];
     if (body.partner) {
-      const partnerEmp = await prisma.employee.findFirst({
-        where: { name: body.partner },
+      const partnerNames = body.partner.split(', ');
+      const partnerEmps = await prisma.employee.findMany({
+        where: { name: { in: partnerNames } },
       });
-      partnerId = partnerEmp?.id ?? null;
+      partnersConnect = partnerEmps.map((emp) => ({ id: emp.id }));
     }
 
     const task = await prisma.task.create({
@@ -164,12 +165,12 @@ export async function POST(request: Request) {
         resultLink: '',
         resultFile: '',
         assigneeId: assigneeEmp.id,
-        partnerId,
         projectId: proj.id,
+        partners: { connect: partnersConnect },
       },
       include: {
         assignee: { include: { division: true } },
-        partnerEmp: { select: { name: true } },
+        partners: { select: { name: true, divisionId: true } },
         project: { select: { name: true } },
         approvals: { include: { division: true } },
         revisions: { orderBy: { createdAt: 'desc' } },

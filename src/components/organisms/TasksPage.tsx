@@ -16,7 +16,8 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, Search, Filter, X, Sparkles, Upload, FileDown } from 'lucide-react';
+import { Plus, Search, Filter, X, Sparkles, Upload, FileDown, ChevronDown, Download } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import Badge from '../atoms/Badge';
 import Button from '../atoms/Button';
 import { TaskDetailModal } from './TaskDetailModal';
@@ -56,7 +57,6 @@ interface TasksPageProps {
 
 // ─── CSV Template kolom yang diharapkan ──────────────────────
 const CSV_HEADERS = ['title', 'description', 'project', 'assignee', 'partner', 'priority', 'taskType', 'date'];
-const CSV_TEMPLATE_URL = `data:text/csv;charset=utf-8,${encodeURIComponent(CSV_HEADERS.join(',') + '\nContoh Task,Deskripsi task,Nama Project,Nama Karyawan,,Medium,Core,2026-12-31')}`;
 
 export default function TasksPage({
   tasks,
@@ -90,8 +90,9 @@ export default function TasksPage({
   const [showImportPreview, setShowImportPreview] = useState(false);
   const [importLoading, setImportLoading] = useState(false);
   const [importResult, setImportResult] = useState<{ success: number; errors: string[] } | null>(null);
-  const csvInputRef = useRef<HTMLInputElement>(null);
-
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showTemplateMenu, setShowTemplateMenu] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   useEffect(() => {
     setIsMounted(true);
@@ -126,7 +127,7 @@ export default function TasksPage({
   const displayed = tasks.filter((t) => {
     const taskMonth = t.date ? (getBusinessPeriod(t.date)?.monthValue || '') : '';
     const matchMonth = filterMonth === 'all' || taskMonth === filterMonth;
-    const matchName = filterName === 'all' || t.assignee === filterName || t.partner === filterName;
+    const matchName = filterName === 'all' || t.assignee === filterName || (t.partner && t.partner.split(', ').includes(filterName));
     const matchProject = filterProject === 'all' || t.project === filterProject;
     const matchStatus =
       filterStatus === 'all' ||
@@ -145,43 +146,56 @@ export default function TasksPage({
   const getStatusLabel = (task: Task): string => {
     if (task.status !== 'Done') return task.status;
     if (task.taskType === 'Support') {
-      if (!task.approvedBy?.includes(task.partner)) return 'Menunggu Pemohon';
+      if (task.partner && !task.partner.split(', ').every((p) => task.approvedBy?.includes(p))) return 'Menunggu Pemohon';
       return 'Menunggu Manager';
     }
     return 'Menunggu Appv';
   };
 
-  // ─── CSV Import: Parse file ───────────────────────────────
-  const handleCsvFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // ─── Import: Parse file (CSV/XLSX) ───────────────────────────────
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const text = ev.target?.result as string;
-      const lines = text.trim().split('\n').map(l => l.trim()).filter(Boolean);
-      if (lines.length < 2) {
-        alert('File CSV kosong atau hanya berisi header.');
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+      const firstSheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[firstSheetName];
+      const jsonData = XLSX.utils.sheet_to_json<any[]>(worksheet, { header: 1 });
+
+      if (jsonData.length < 2) {
+        alert('File kosong atau hanya berisi header.');
         return;
       }
 
-      // Parse header: mendukung BOM UTF-8
-      const rawHeaders = lines[0].replace(/^\uFEFF/, '').split(',').map(h => h.trim().toLowerCase());
+      const rawHeaders = (jsonData[0] as any[]).map(h => String(h).trim().toLowerCase());
 
-      const rows: ImportRow[] = lines.slice(1).map((line, idx) => {
-        // Split CSV dengan aman (support koma dalam tanda kutip)
-        const cols = line.match(/(".*?"|[^,]+|(?<=,)(?=,)|(?<=,)$|^(?=,))/g) ?? line.split(',');
-        const cleanCols = cols.map(c => c.trim().replace(/^"|"$/g, ''));
+      const rows: ImportRow[] = jsonData.slice(1).map((cols) => {
+        if (!cols || !Array.isArray(cols)) cols = [];
+        
+        const getCol = (key: string) => {
+          const idx = rawHeaders.indexOf(key.toLowerCase());
+          return idx >= 0 && cols[idx] !== undefined && cols[idx] !== null ? String(cols[idx]).trim() : '';
+        };
+
+        let rawDate = getCol('date');
+        // If XLSX parsed it as a Date object, it might be in cols[idx] as Date
+        const dateIdx = rawHeaders.indexOf('date');
+        if (dateIdx >= 0 && cols[dateIdx] instanceof Date) {
+          const d = cols[dateIdx] as Date;
+          rawDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        }
 
         const row: ImportRow = {
-          title: cleanCols[rawHeaders.indexOf('title')] ?? '',
-          description: cleanCols[rawHeaders.indexOf('description')] ?? '',
-          project: cleanCols[rawHeaders.indexOf('project')] ?? '',
-          assignee: cleanCols[rawHeaders.indexOf('assignee')] ?? '',
-          partner: cleanCols[rawHeaders.indexOf('partner')] ?? '',
-          priority: cleanCols[rawHeaders.indexOf('priority')] ?? 'Medium',
-          taskType: cleanCols[rawHeaders.indexOf('tasktype')] ?? 'Core',
-          date: cleanCols[rawHeaders.indexOf('date')] ?? '',
+          title: getCol('title'),
+          description: getCol('description'),
+          project: getCol('project'),
+          assignee: getCol('assignee'),
+          partner: getCol('partner'),
+          priority: getCol('priority') || 'Medium',
+          taskType: getCol('tasktype') || 'Core',
+          date: rawDate,
         };
 
         // Validasi lokal per baris
@@ -199,13 +213,88 @@ export default function TasksPage({
         return row;
       });
 
-      setImportRows(rows);
+      // Filter out completely empty rows
+      const validDataRows = rows.filter(r => r.title || r.project || r.assignee);
+
+      setImportRows(validDataRows);
       setShowImportPreview(true);
       setImportResult(null);
-    };
-    reader.readAsText(file, 'UTF-8');
+    } catch (err) {
+      console.error(err);
+      alert('Gagal membaca file. Pastikan format file benar (.csv atau .xlsx).');
+    }
     // Reset input agar file yang sama bisa dipilih lagi
     e.target.value = '';
+  };
+
+  const sampleProject = projects.length > 0 ? projects[0].name : 'Contoh Project';
+  const sampleEmployee = employees.length > 0 ? employees[0].name : 'Contoh Karyawan';
+
+  const downloadExcelTemplate = () => {
+    const ws = XLSX.utils.aoa_to_sheet([
+      CSV_HEADERS,
+      ['Contoh Task', 'Deskripsi task', sampleProject, sampleEmployee, '', 'Medium', 'Core', '2026-12-31']
+    ]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Template");
+    XLSX.writeFile(wb, "template-import-task.xlsx");
+    setShowTemplateMenu(false);
+  };
+
+  const dynamicCsvTemplateUrl = `data:text/csv;charset=utf-8,${encodeURIComponent(
+    CSV_HEADERS.join(',') + `\nContoh Task,Deskripsi task,${sampleProject},${sampleEmployee},,Medium,Core,2026-12-31`
+  )}`;
+
+  const handleExportData = (type: 'csv' | 'xlsx') => {
+    const filterDetails = [
+      `Filter Periode: ${filterMonth === 'all' ? 'Semua' : filterMonth}`,
+      `Filter PIC/Assignee: ${filterName === 'all' ? 'Semua' : filterName}`,
+      `Filter Project: ${filterProject === 'all' ? 'Semua' : filterProject}`,
+      `Filter Status: ${filterStatus === 'all' ? 'Semua' : filterStatus}`,
+      search ? `Pencarian: ${search}` : ''
+    ].filter(Boolean);
+
+    const exportHeaders = [...CSV_HEADERS, 'status'];
+    
+    const exportData = displayed.map(t => [
+      t.title,
+      t.description,
+      t.project,
+      t.assignee,
+      t.partner || '',
+      t.priority,
+      t.taskType,
+      t.date,
+      t.status
+    ]);
+
+    const worksheetData = [
+      ['Data Export Task Order'],
+      ...filterDetails.map(f => [f]),
+      [], // Empty row
+      exportHeaders,
+      ...exportData
+    ];
+
+    const ws = XLSX.utils.aoa_to_sheet(worksheetData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Export Data');
+
+    if (type === 'xlsx') {
+      XLSX.writeFile(wb, 'export-task-order.xlsx');
+    } else {
+      const csvContent = XLSX.utils.sheet_to_csv(ws);
+      const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'export-task-order.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+    setShowExportMenu(false);
   };
 
   const handleConfirmImport = async () => {
@@ -243,25 +332,69 @@ export default function TasksPage({
             Ide Improvement
           </Button>
 
-          {/* Tombol Import CSV (Admin & Manager saja) */}
+          {/* Tombol Import & Export (Admin & Manager saja) */}
           {(isAdmin || isManager) && (
             <>
-              <a
-                href={CSV_TEMPLATE_URL}
-                download="template-import-task.csv"
-                className="flex items-center gap-1.5 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-200 px-3 py-2 rounded-lg transition-colors"
-                title="Unduh template CSV"
-              >
-                <FileDown size={14} /> Template
-              </a>
+              <div className="relative">
+                <button
+                  onClick={() => { setShowExportMenu(!showExportMenu); setShowTemplateMenu(false); }}
+                  className="flex items-center gap-1.5 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-200 px-3 py-2 rounded-lg transition-colors"
+                  title="Export Data"
+                >
+                  <Download size={14} /> Export <ChevronDown size={14} />
+                </button>
+                {showExportMenu && (
+                  <div className="absolute top-full mt-1 right-0 w-36 bg-white border border-slate-200 shadow-lg rounded-xl overflow-hidden z-10">
+                    <button
+                      onClick={() => handleExportData('csv')}
+                      className="block w-full text-left px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 border-b border-slate-100"
+                    >
+                      Export .CSV
+                    </button>
+                    <button
+                      onClick={() => handleExportData('xlsx')}
+                      className="block w-full text-left px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                    >
+                      Export .XLSX
+                    </button>
+                  </div>
+                )}
+              </div>
+              <div className="relative">
+                <button
+                  onClick={() => { setShowTemplateMenu(!showTemplateMenu); setShowExportMenu(false); }}
+                  className="flex items-center gap-1.5 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-200 px-3 py-2 rounded-lg transition-colors"
+                  title="Unduh template"
+                >
+                  <FileDown size={14} /> Template <ChevronDown size={14} />
+                </button>
+                {showTemplateMenu && (
+                  <div className="absolute top-full mt-1 right-0 w-36 bg-white border border-slate-200 shadow-lg rounded-xl overflow-hidden z-10">
+                    <a
+                      href={dynamicCsvTemplateUrl}
+                      download="template-import-task.csv"
+                      onClick={() => setShowTemplateMenu(false)}
+                      className="block px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 border-b border-slate-100"
+                    >
+                      Download .CSV
+                    </a>
+                    <button
+                      onClick={downloadExcelTemplate}
+                      className="block w-full text-left px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                    >
+                      Download .XLSX
+                    </button>
+                  </div>
+                )}
+              </div>
               <label className="flex items-center gap-1.5 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-200 px-3 py-2 rounded-lg cursor-pointer transition-colors">
-                <Upload size={14} /> Import CSV
+                <Upload size={14} /> Import Data
                 <input
-                  ref={csvInputRef}
+                  ref={fileInputRef}
                   type="file"
-                  accept=".csv"
+                  accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
                   className="hidden"
-                  onChange={handleCsvFile}
+                  onChange={handleImportFile}
                 />
               </label>
             </>
@@ -508,6 +641,7 @@ export default function TasksPage({
         <TaskDetailModal
           task={selectedTask}
           currentUser={currentUser}
+          employees={employees}
           onClose={() => setSelectedTask(null)}
           onStatusChange={(taskId, status) => {
             onStatusChange(taskId, status);

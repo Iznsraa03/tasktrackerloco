@@ -290,10 +290,12 @@ export default function App() {
       }
       // Notify about tasks waiting for approval
       if (t.status === 'Done') {
-        const partnerHasApproved = t.taskType === 'Support' && t.approvedBy?.includes(t.partner);
+        const partnerNames = t.partner ? t.partner.split(', ') : [];
+        const currentUserIsPartner = partnerNames.includes(currentUser.name);
+        const currentUserHasApproved = t.approvedBy?.includes(currentUser.name);
         if (isAdmin) {
           result.push({ id: `appv-${t.id}`, taskId: t.id, type: 'need_approval', title: `Menunggu Appv: ${t.title}`, message: `Assignee: ${t.assignee} | Divisi: ${t.division}`, bgColor: '' });
-        } else if (t.taskType === 'Support' && currentUser.name === t.partner && !partnerHasApproved) {
+        } else if (t.taskType === 'Support' && currentUserIsPartner && !currentUserHasApproved) {
           result.push({ id: `support-${t.id}`, taskId: t.id, type: 'need_approval', title: `Approval Diminta: ${t.title}`, message: `${t.assignee} menyelesaikan task support Anda.`, bgColor: '' });
         } else if (isManager) {
           const assigneeEmp = employees.find((e) => e.name === t.assignee);
@@ -311,8 +313,8 @@ export default function App() {
   const scopedTasks = React.useMemo(() => {
     if (!currentUser) return [];
     if (currentUser.role === 'Admin') return tasks;
-    if (currentUser.role === 'Manager') return tasks.filter((t) => t.division === currentUser.division || t.partner !== '' && employees.find((e) => e.name === t.partner)?.division === currentUser.division);
-    return tasks.filter((t) => t.assignee === currentUser.name || t.partner === currentUser.name);
+    if (currentUser.role === 'Manager') return tasks.filter((t) => t.division === currentUser.division || (t.partner && t.partner.split(', ').some((name) => employees.find((e) => e.name === name)?.division === currentUser.division)));
+    return tasks.filter((t) => t.assignee === currentUser.name || (t.partner && t.partner.split(', ').includes(currentUser.name)));
   }, [tasks, currentUser, employees]);
 
   // ─── Task Handlers ────────────────────────────────────────────
@@ -387,13 +389,17 @@ export default function App() {
     let finalStatus: Task['status'] = task.status;
     if (isAdmin) { finalStatus = 'Approved'; }
     else if (task.taskType === 'Support') {
-      const partnerEmp = employees.find((e) => e.name === task.partner);
-      const partnerMgrApproved = newApprovedBy.includes(partnerEmp?.division ?? '');
-      if (partnerMgrApproved) finalStatus = 'Approved';
+      const partnerNames = task.partner ? task.partner.split(', ') : [];
+      const partnerEmps = employees.filter((e) => partnerNames.includes(e.name));
+      const allPartnerMgrsApproved = partnerEmps.every((e) => newApprovedBy.includes(e.division));
+      if (allPartnerMgrsApproved) finalStatus = 'Approved';
     } else if (task.taskType === 'Colaboration') {
       const assigneeEmp = employees.find((e) => e.name === task.assignee);
-      const partnerEmp = employees.find((e) => e.name === task.partner);
-      if (newApprovedBy.includes(assigneeEmp?.division ?? '') && newApprovedBy.includes(partnerEmp?.division ?? '')) finalStatus = 'Approved';
+      const assigneeMgrApproved = assigneeEmp ? newApprovedBy.includes(assigneeEmp.division) : false;
+      const partnerNames = task.partner ? task.partner.split(', ') : [];
+      const partnerEmps = employees.filter((e) => partnerNames.includes(e.name));
+      const allPartnersMgrsApproved = partnerEmps.every((e) => newApprovedBy.includes(e.division));
+      if (assigneeMgrApproved && allPartnersMgrsApproved) finalStatus = 'Approved';
     } else {
       finalStatus = 'Approved';
     }
