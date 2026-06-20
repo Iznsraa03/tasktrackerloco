@@ -8,7 +8,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/src/lib/prisma';
 
 const EMPLOYEES_SEED = [
-  { name: 'Muhammad Ridwan Zain', email: 'm.ridwan@pt-anda.com', phone: '08110000001', address: 'Makassar', birthDate: '1990-01-01', division: 'Operation', jobTitle: 'Direktur Operasional', role: 'Admin', status: 'Aktif', password: 'password123' },
+  { name: 'Super Admin', email: 'superadmin@admin.com', phone: '08110000001', address: 'Makassar', birthDate: '1990-01-01', division: 'Operation', jobTitle: 'Direktur Operasional', role: 'Admin', status: 'Aktif', password: 'admin@751' },
 ];
 
 const PROJECTS_SEED = [

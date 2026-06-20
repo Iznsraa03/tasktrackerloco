@@ -27,8 +27,8 @@ MYSQL_PASSWORD="Loco21SecurePassword!"
 MYSQL_DATABASE="loco21_prod_db"
 SMTP_HOST="smtp.gmail.com"
 SMTP_PORT=587
-SMTP_USER="waisalqarni1712@gmail.com"
-SMTP_PASSWORD="YOUR_GMAIL_APP_PASSWORD"
+SMTP_USER="Info.loco21pro@gmail.com"
+SMTP_PASSWORD="ugja jtgc qsbc fscz"
 SMTP_FROM="Locomotive 21 Production <no-reply@loco21event.com>"
 NEXT_PUBLIC_APP_URL="https://loco21event.com"
 EOF
