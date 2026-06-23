@@ -14,8 +14,8 @@
     "axios": "^1.16.1",
     "lucide-react": "^1.16.0",
     "mariadb": "^3.5.2",
-    "next": "^16.2.6",
-    "nodemailer": "^8.0.10",
+    "next": "^9.3.3",
+    "nodemailer": "^9.0.1",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "xlsx": "^0.18.5"
@@ -28,7 +28,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
-    "prisma": "^7.8.0",
+    "prisma": "^6.19.3",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

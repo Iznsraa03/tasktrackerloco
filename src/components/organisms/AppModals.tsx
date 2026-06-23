@@ -120,7 +120,7 @@ export function TaskModal({ isOpen, mode = 'add', task, employees, projects, cur
                 {['Operation','Admin & Finance','Marketing','Creative & Program'].map((d) => <option key={d} value={d}>{d}</option>)}
               </select>
             </FormField>
-            <FormField label="Ditugaskan Ke (PIC)" required>
+            <FormField label="Assignee" required>
               <select
                 required value={task.assignee}
                 disabled={isKaryawan && task.taskType !== 'Support'}
@@ -135,7 +135,7 @@ export function TaskModal({ isOpen, mode = 'add', task, employees, projects, cur
 
           {(task.taskType === 'Colaboration' || task.taskType === 'Support') && (
             <div className="bg-orange-500/5 border border-orange-500/15 p-4 rounded-xl">
-              <FormField label={task.taskType === 'Support' ? 'Pemohon Bantuan (Requestor)' : 'Partner Kolaborasi'} required>
+              <FormField label={task.taskType === 'Support' ? 'Supported By' : 'Partner Kolaborasi'} required>
                 <div className="mt-2 border border-slate-200 rounded-xl max-h-48 overflow-y-auto p-3 space-y-1 bg-white custom-scrollbar">
                   {employees
                     .filter((e) => e.status === 'Aktif' && e.name !== task.assignee)
