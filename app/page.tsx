@@ -445,8 +445,12 @@ export default function App() {
     const errors: string[] = [];
     for (const row of rows) {
       try {
+        const emp = employees.find((e) => e.name === row.assignee);
+        const division = emp ? emp.division : 'Operation';
+
         const created = await api.tasks.create({
           ...defaultNewTask(),
+          division: division as any,
           title: row.title,
           description: row.description || '',
           project: row.project,
