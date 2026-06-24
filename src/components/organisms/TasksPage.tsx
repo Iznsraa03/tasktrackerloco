@@ -16,7 +16,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, Search, Filter, X, Sparkles, Upload, FileDown, ChevronDown, Download } from 'lucide-react';
+import { Plus, Search, Filter, X, Sparkles, Upload, FileDown, ChevronDown, Download, Loader2 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import Badge from '../atoms/Badge';
 import Button from '../atoms/Button';
@@ -169,9 +169,20 @@ export default function TasksPage({
         return;
       }
 
-      const rawHeaders = (jsonData[0] as any[]).map(h => String(h).trim().toLowerCase());
+      // Cari baris header (maksimal 15 baris pertama)
+      let headerRowIndex = 0;
+      for (let i = 0; i < Math.min(15, jsonData.length); i++) {
+        if (!jsonData[i] || !Array.isArray(jsonData[i])) continue;
+        const rowKeys = (jsonData[i] as any[]).map(h => String(h).trim().toLowerCase());
+        if (rowKeys.includes('title') && rowKeys.includes('project')) {
+          headerRowIndex = i;
+          break;
+        }
+      }
 
-      const rows: ImportRow[] = jsonData.slice(1).map((cols) => {
+      const rawHeaders = (jsonData[headerRowIndex] as any[]).map(h => String(h).trim().toLowerCase());
+
+      const rows: ImportRow[] = jsonData.slice(headerRowIndex + 1).map((cols) => {
         if (!cols || !Array.isArray(cols)) cols = [];
         
         const getCol = (key: string) => {
@@ -464,7 +475,14 @@ export default function TasksPage({
             </div>
 
             {/* Hasil Import */}
-            {importResult && (
+            {importLoading && (
+              <div className="mx-5 my-3 p-4 rounded-xl text-sm bg-blue-50 border border-blue-200 text-blue-700 flex flex-col items-center justify-center gap-2">
+                <Loader2 size={24} className="animate-spin text-blue-600" />
+                <p className="font-bold">Sedang memproses {validCount} tugas...</p>
+                <p className="text-xs text-blue-500 text-center max-w-md">Sistem sedang melakukan sinkronisasi data secara massal. Harap tunggu sesaat.</p>
+              </div>
+            )}
+            {!importLoading && importResult && (
               <div className={`mx-5 my-3 p-3 rounded-xl text-sm ${importResult.success > 0 ? 'bg-emerald-50 border border-emerald-200 text-emerald-700' : 'bg-red-50 border border-red-200 text-red-600'}`}>
                 {importResult.success > 0
                   ? `✅ ${importResult.success} tugas berhasil diimport.`

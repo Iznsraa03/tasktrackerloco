@@ -67,6 +67,13 @@ async function createTask(data: Partial<Task>): Promise<Task> {
   return res.data;
 }
 
+async function bulkCreateTasks(rows: any[]): Promise<{ success: number; errors: string[]; createdTasks: Task[] }> {
+  const res = await axiosInstance.post<{ success: number; errors: string[]; createdTasks: Task[] }>('/tasks/bulk', rows, {
+    timeout: 60000, // 60 seconds for bulk imports
+  });
+  return res.data;
+}
+
 async function updateTask(id: string, data: Partial<Task>): Promise<Task> {
   const res = await axiosInstance.put<Task>(`/tasks/${id}`, data);
   return res.data;
@@ -130,6 +137,7 @@ export const api = {
   tasks: {
     getAll: getTasks,
     create: createTask,
+    bulkCreate: bulkCreateTasks,
     update: updateTask,
     remove: deleteTask,
   },

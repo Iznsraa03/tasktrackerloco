@@ -441,14 +441,11 @@ export default function App() {
 
   // ─── Bulk Import CSV Handler ──────────────────────────────────
   const handleBulkImport = async (rows: any[]): Promise<{ success: number; errors: string[] }> => {
-    let success = 0;
-    const errors: string[] = [];
-    for (const row of rows) {
-      try {
+    try {
+      const payload = rows.map((row) => {
         const emp = employees.find((e) => e.name === row.assignee);
         const division = emp ? emp.division : 'Operation';
-
-        const created = await api.tasks.create({
+        return {
           ...defaultNewTask(),
           division: division as any,
           title: row.title,
@@ -459,14 +456,18 @@ export default function App() {
           priority: row.priority as any,
           taskType: row.taskType as any,
           date: row.date,
-        });
-        setTasks((prev) => [created, ...prev]);
-        success++;
-      } catch (err: any) {
-        errors.push(`"${row.title}": ${err?.response?.data?.message ?? err?.message ?? 'Gagal'}`);
+        };
+      });
+
+      const res = await api.tasks.bulkCreate(payload);
+      if (res.createdTasks && res.createdTasks.length > 0) {
+        setTasks((prev) => [...res.createdTasks, ...prev]);
       }
+      return { success: res.success, errors: res.errors || [] };
+    } catch (err: any) {
+      console.error('[Bulk Import Error]', err);
+      return { success: 0, errors: [err?.response?.data?.message ?? err?.message ?? 'Gagal memproses bulk import secara keseluruhan.'] };
     }
-    return { success, errors };
   };
 
   const generateAIDescription = async () => {
