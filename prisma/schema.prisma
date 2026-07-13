@@ -200,5 +200,7 @@ model TaskRevision {
   notes          String   @db.Text
   createdAt      DateTime @default(now())
 
+  revisedByName  String?  @default("Admin")
+
   @@map("task_revisions")
 }

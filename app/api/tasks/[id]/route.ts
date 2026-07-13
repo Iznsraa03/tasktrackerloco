@@ -57,6 +57,7 @@ function serializeTask(t: any): Task {
       id: r.id,
       revisionNumber: r.revisionNumber,
       notes: r.notes,
+      revisedByName: r.revisedByName,
       createdAt: r.createdAt?.toISOString?.() ?? String(r.createdAt),
     })) ?? [],
   };
@@ -240,6 +241,7 @@ export async function PUT(
           taskId: id,
           revisionNumber: (existing?.revisionCount ?? 0) + 1,
           notes: body.revisionNotes,
+          revisedByName: user?.name || "Admin",
         },
       });
     }

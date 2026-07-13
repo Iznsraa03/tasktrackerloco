@@ -56,7 +56,7 @@ export interface Task {
   resultFile: string;
   revisionNotes: string;
   approvedBy: string[];
-  revisions?: Array<{ id: string; revisionNumber: number; notes: string; createdAt: string }>;
+  revisions?: Array<{ id: string; revisionNumber: number; notes: string; createdAt: string; revisedByName?: string }>;
 }
 
 export interface KPIResult {

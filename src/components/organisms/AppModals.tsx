@@ -75,7 +75,7 @@ export function TaskModal({ isOpen, mode = 'add', task, employees, projects, cur
       }
       
       if (!res.ok) {
-        if (res.status === 413) throw new Error('Ukuran file terlalu besar. (Maks 10MB)');
+        if (res.status === 413) throw new Error('Ukuran file terlalu besar. (Maks 15MB)');
         throw new Error(data.message ?? `Upload gagal (Status: ${res.status})`);
       }
       
@@ -233,7 +233,7 @@ export function TaskModal({ isOpen, mode = 'add', task, employees, projects, cur
               {task.briefFile && !briefUploading && (
                 <p className="text-xs text-emerald-600 font-medium">✓ File brief berhasil diunggah: {task.fileName}</p>
               )}
-              <p className="text-[10px] text-slate-400">Format: PDF, Word, Excel, PPT, ZIP, JPG, PNG — Maks 10MB</p>
+              <p className="text-[10px] text-slate-400">Format: PDF, Word, Excel, PPT, ZIP, JPG, PNG — Maks 15MB</p>
             </div>
           </FormField>
 
@@ -297,7 +297,7 @@ export function ResultModal({ isOpen, task, submission, onClose, onChange, onSub
       }
       
       if (!res.ok) {
-        if (res.status === 413) throw new Error('Ukuran file terlalu besar. (Maks 10MB)');
+        if (res.status === 413) throw new Error('Ukuran file terlalu besar. (Maks 15MB)');
         throw new Error(data.message ?? `Upload gagal (Status: ${res.status})`);
       }
       
@@ -372,7 +372,7 @@ export function ResultModal({ isOpen, task, submission, onClose, onChange, onSub
               {submission.fileName && !uploading && (
                 <p className="text-xs text-emerald-600 font-medium mt-1">✓ {submission.fileName} — siap dikirim</p>
               )}
-              <p className="text-[10px] text-slate-400 mt-1">Format: PDF, Word, Excel, PPT, ZIP, Gambar — Maks 10MB</p>
+              <p className="text-[10px] text-slate-400 mt-1">Format: PDF, Word, Excel, PPT, ZIP, Gambar — Maks 15MB</p>
             </FormField>
           )}
           <div className="flex justify-end gap-3 pt-2 border-t border-slate-100">

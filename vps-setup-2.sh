@@ -42,8 +42,8 @@ server {
     listen 80;
     server_name loco21event.com www.loco21event.com;
     
-    # Izinkan upload file hingga 10MB
-    client_max_body_size 10M;
+    # Izinkan upload file hingga 15MB
+    client_max_body_size 15M;
 
     location / {
         proxy_pass http://localhost:3000;

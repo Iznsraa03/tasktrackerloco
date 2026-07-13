@@ -4,7 +4,7 @@
 //        ke direktori /public/uploads/
 //
 // Validasi:
-//   - Ukuran max: 10MB
+//   - Ukuran max: 15MB
 //   - Format yang diizinkan: pdf, docx, xlsx, pptx, zip, jpg, jpeg, png, gif, webp
 // ============================================================
 
@@ -14,7 +14,7 @@ import { existsSync } from 'fs';
 import path from 'path';
 import { randomUUID } from 'crypto';
 
-const MAX_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
+const MAX_SIZE_BYTES = 15 * 1024 * 1024; // 15MB
 const ALLOWED_EXTENSIONS = new Set([
   'pdf', 'docx', 'doc', 'xlsx', 'xls', 'pptx', 'ppt',
   'zip', 'rar', '7z',
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     // Validasi ukuran file
     if (file.size > MAX_SIZE_BYTES) {
       return NextResponse.json(
-        { message: `Ukuran file melebihi batas maksimum 10MB. Ukuran file Anda: ${(file.size / 1024 / 1024).toFixed(1)}MB.` },
+        { message: `Ukuran file melebihi batas maksimum 15MB. Ukuran file Anda: ${(file.size / 1024 / 1024).toFixed(1)}MB.` },
         { status: 413 }
       );
     }

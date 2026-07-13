@@ -449,7 +449,7 @@ export function TaskDetailModal({
                     <div key={rev.id} className="bg-white border border-orange-200 rounded-xl p-3">
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-[10px] font-bold text-orange-500">
-                          Revisi #{rev.revisionNumber}
+                          Revisi {rev.revisedByName ? rev.revisedByName : '#' + rev.revisionNumber}
                         </span>
                         <span className="text-[9px] text-slate-400">
                           {formatDate(rev.createdAt)}
