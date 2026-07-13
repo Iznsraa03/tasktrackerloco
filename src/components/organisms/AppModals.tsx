@@ -67,8 +67,18 @@ export function TaskModal({ isOpen, mode = 'add', task, employees, projects, cur
       const formData = new FormData();
       formData.append('file', file);
       const res = await fetch('/api/upload', { method: 'POST', body: formData });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message ?? 'Upload gagal');
+      
+      let data: any = {};
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        data = await res.json();
+      }
+      
+      if (!res.ok) {
+        if (res.status === 413) throw new Error('Ukuran file terlalu besar. (Maks 10MB)');
+        throw new Error(data.message ?? `Upload gagal (Status: ${res.status})`);
+      }
+      
       onChange({ briefFile: data.filePath, fileName: file.name });
       onBriefFileChange?.(data.filePath);
     } catch (err: any) {
@@ -279,8 +289,18 @@ export function ResultModal({ isOpen, task, submission, onClose, onChange, onSub
       const formData = new FormData();
       formData.append('file', file);
       const res = await fetch('/api/upload', { method: 'POST', body: formData });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message ?? 'Upload gagal');
+      
+      let data: any = {};
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        data = await res.json();
+      }
+      
+      if (!res.ok) {
+        if (res.status === 413) throw new Error('Ukuran file terlalu besar. (Maks 10MB)');
+        throw new Error(data.message ?? `Upload gagal (Status: ${res.status})`);
+      }
+      
       onChange({ value: data.filePath, fileName: file.name });
     } catch (err: any) {
       setUploadError(err.message ?? 'Gagal mengunggah file. Coba lagi.');
