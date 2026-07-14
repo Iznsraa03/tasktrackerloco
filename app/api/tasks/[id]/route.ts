@@ -48,7 +48,7 @@ function serializeTask(t: any): Task {
     resultLink: t.resultLink ?? '',
     resultFile: t.resultFile ?? '',
     revisionNotes: t.revisions?.length > 0 ? t.revisions[0].notes : '',
-    approvedBy: t.approvals?.map((a: any) => a.division.displayName) ?? [],
+    approvedBy: t.approvals?.map((a: any) => a.approvedBy?.name ?? a.division.displayName) ?? [],
     assignee: t.assignee?.name ?? '',
     division: (t.assignee?.division?.displayName ?? 'Operation') as Division,
     project: t.project?.name ?? '',
@@ -68,7 +68,7 @@ const TASK_INCLUDE = {
   assignee: { include: { division: true } },
   partners: { select: { name: true, divisionId: true } },
   project: { select: { name: true } },
-  approvals: { include: { division: true } },
+  approvals: { include: { division: true, approvedBy: true } },
   revisions: { orderBy: { createdAt: 'desc' as const } }, // Semua revisi untuk modal detail
 };
 
@@ -241,7 +241,7 @@ export async function PUT(
           taskId: id,
           revisionNumber: (existing?.revisionCount ?? 0) + 1,
           notes: body.revisionNotes,
-          revisedByName: user?.name || "Admin",
+          revisedByName: (user?.name || "Admin").split(' - ')[0].trim(),
         },
       });
     }
