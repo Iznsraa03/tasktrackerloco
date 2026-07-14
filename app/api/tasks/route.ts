@@ -58,6 +58,7 @@ function serializeTask(t: any): Task {
       id: r.id,
       revisionNumber: r.revisionNumber,
       notes: r.notes,
+      revisedByName: r.revisedByName,
       createdAt: r.createdAt?.toISOString?.() ?? String(r.createdAt),
     })) ?? [],
   };
