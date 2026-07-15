@@ -98,6 +98,12 @@ export default function TasksPage({
     setIsMounted(true);
   }, []);
 
+  const todayWitaRaw = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Makassar' }));
+  const witaY = todayWitaRaw.getFullYear();
+  const witaM = String(todayWitaRaw.getMonth() + 1).padStart(2, '0');
+  const witaD = String(todayWitaRaw.getDate()).padStart(2, '0');
+  const todayWITA = `${witaY}-${witaM}-${witaD}`;
+
   useEffect(() => {
     setSearch(initialSearch);
   }, [initialSearch]);
@@ -621,11 +627,13 @@ export default function TasksPage({
                   </td>
                   <td className="px-5 py-4 text-slate-500 text-xs">{task.date}</td>
                   <td className="px-5 py-4 text-center">
-                    {task.status === 'Approved' && task.completedAt ? (
-                      task.completedAt <= task.date
-                        ? <span className="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-1.5 py-0.5 rounded font-bold">Ya</span>
-                        : <span className="text-[10px] bg-red-500/10 text-red-400 border border-red-500/20 px-1.5 py-0.5 rounded font-bold">Terlambat</span>
-                    ) : '-'}
+                    {task.status === 'Approved' ? (
+                      <span className="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-1.5 py-0.5 rounded font-bold">Ya</span>
+                    ) : task.date < todayWITA ? (
+                      <span className="text-[10px] bg-red-500/10 text-red-400 border border-red-500/20 px-1.5 py-0.5 rounded font-bold">Terlambat</span>
+                    ) : (
+                      '-'
+                    )}
                   </td>
                   <td className="px-5 py-4">
                     <Badge variant={task.status as TaskStatus} size="xs">{getStatusLabel(task)}</Badge>
