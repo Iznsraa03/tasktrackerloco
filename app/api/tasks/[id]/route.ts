@@ -255,8 +255,8 @@ export async function PUT(
         if (divRec) {
           await prisma.taskApproval.upsert({
             where: { taskId_divisionId: { taskId: id, divisionId: divRec.id } },
-            update: { approvedAt: new Date() },
-            create: { taskId: id, divisionId: divRec.id },
+            update: { approvedAt: new Date(), approvedById: user?.id },
+            create: { taskId: id, divisionId: divRec.id, approvedById: user?.id },
           });
         }
       }
