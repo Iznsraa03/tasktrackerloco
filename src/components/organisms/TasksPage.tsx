@@ -627,10 +627,10 @@ export default function TasksPage({
                   </td>
                   <td className="px-5 py-4 text-slate-500 text-xs">{task.date}</td>
                   <td className="px-5 py-4 text-center">
-                    {task.status === 'Approved' ? (
-                      <span className="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-1.5 py-0.5 rounded font-bold">Ya</span>
-                    ) : task.date < todayWITA ? (
+                    {(task.completedAt ? task.completedAt > task.date : task.date < todayWITA) ? (
                       <span className="text-[10px] bg-red-500/10 text-red-400 border border-red-500/20 px-1.5 py-0.5 rounded font-bold">Terlambat</span>
+                    ) : task.status === 'Approved' ? (
+                      <span className="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-1.5 py-0.5 rounded font-bold">Ya</span>
                     ) : (
                       '-'
                     )}

@@ -253,7 +253,14 @@ export function TaskDetailModal({
     }
   };
 
-  const isOnTime = task.status === 'Approved' ? true : null;
+  const todayWitaRaw = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Makassar' }));
+  const witaY = todayWitaRaw.getFullYear();
+  const witaM = String(todayWitaRaw.getMonth() + 1).padStart(2, '0');
+  const witaD = String(todayWitaRaw.getDate()).padStart(2, '0');
+  const todayWITA = `${witaY}-${witaM}-${witaD}`;
+
+  const isLate = task.completedAt ? task.completedAt > task.date : task.date < todayWITA;
+  const isOnTime = isLate ? false : task.status === 'Approved' ? true : null;
 
   return (
     <div
